@@ -2,3 +2,7 @@
 /arm
 /X86_DLL
 /.settings
+/gw13762/*.user
+/build-gw13762-unknown-Release
+/GDW1376_2/.settings
+/GDW1376_2/X86_DLL

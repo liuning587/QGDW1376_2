@@ -89,7 +89,7 @@ AFN15_FN01(unsigned char dir,
     pcb(pline_end);
     if (dir == 0)   //下行
     {
-        if (len < sizeof(file_tran_req_t))
+        if (len < (int)sizeof(file_tran_req_t))
         {
             sprintf(buf, "%s输入报文长度不足解析失败!%s", pline_head,  pline_end);
             pcb(buf);
