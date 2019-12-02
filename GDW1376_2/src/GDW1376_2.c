@@ -147,7 +147,7 @@ get_commtype_str(unsigned char commtype)
  * @retval  电能表通道特征
  ******************************************************************************
  */
-static const char*
+static const char *
 get_meter_comm_type(unsigned char value)
 {
     if (value > 15)
@@ -179,7 +179,7 @@ get_meter_comm_type(unsigned char value)
  * @retval  电能表通道特征
  ******************************************************************************
  */
-static const char*
+static const char *
 get_errcode_type(unsigned char value)
 {
     if (value > 15)
@@ -207,7 +207,7 @@ get_errcode_type(unsigned char value)
  * @retval  AFN名字
  ******************************************************************************
  */
-static const char*
+static const char *
 get_AFN_name(unsigned char afn)
 {
     switch (afn)
@@ -240,6 +240,8 @@ get_AFN_name(unsigned char afn)
             return "文件传输";
         case 0xf0:
             return "内部测试";
+        case 0xf1:
+            return "并发抄表";
         default:
             break;
     }
@@ -248,11 +250,11 @@ get_AFN_name(unsigned char afn)
 /**
  ******************************************************************************
  * @brief   输出报文结构解析
- * @param[in]  *pin         : 输入报文
- * @param[in]   len         : 输入报文长度
- * @param[in]  *pcb         : 回调函数
- * @param[in]  *pline_head  : 每行起始填充字符串
- * @param[in]  *pline_end   : 每行结束填充字符串
+ * @param[in]  *pin        : 输入报文
+ * @param[in]   len        : 输入报文长度
+ * @param[in]  *pcb        : 回调函数
+ * @param[in]  *pline_head : 每行起始填充字符串
+ * @param[in]  *pline_end  : 每行结束填充字符串
  *
  * @return  None
  ******************************************************************************
@@ -440,13 +442,13 @@ print_struct(const unsigned char *pin,
 /**
  ******************************************************************************
  * @brief   GDW1376_2报文解析
- * @param[in]  *pin         : 输入报文
- * @param[in]   len         : 输入报文长度
- * @param[in]  *pcb         : 回调函数
- * @param[in]  *pline_head  : 每行起始填充字符串
- * @param[in]  *pline_end   : 每行结束填充字符串
+ * @param[in]  *pin        : 输入报文
+ * @param[in]   len        : 输入报文长度
+ * @param[in]  *pcb        : 回调函数
+ * @param[in]  *pline_head : 每行起始填充字符串
+ * @param[in]  *pline_end  : 每行结束填充字符串
  *
- * @retval  -1  : 解析出差
+ * @retval  -1  : 解析出错
  * @retval   0  : 解析成功
  ******************************************************************************
  */
@@ -533,7 +535,6 @@ GDW1376_2_error(int errid)
 /**
  ******************************************************************************
  * @brief   获取版本字符串
- *
  * @retval  版本字符串首地址
  ******************************************************************************
  */
@@ -546,7 +547,6 @@ GDW1376_2_ver_str(void)
 /**
  ******************************************************************************
  * @brief   获取修改日志
- *
  * @retval  版本字符串首地址
  ******************************************************************************
  */
