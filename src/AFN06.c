@@ -264,7 +264,7 @@ AFN06_FN04(unsigned char dir,
     {
         //无
     }
-    else    //上行
+    else    //上行 todo: 这里解析有问题
     {
         sprintf(buf, "%s上报从节点的数量:%d%s", pline_head, pin[0], pline_end);
         pcb(buf);
@@ -274,27 +274,32 @@ AFN06_FN04(unsigned char dir,
                 pline_head, pin[1],pin[2], pin[3],  pin[4], pin[5], pin[6], pline_end);
         pcb(buf);
 
-        sprintf(buf, "%s从节点1通信协议类型:%d%s", pline_head, pin[7], pline_end); //00: 透明传输 01:645-97 02:645-07 03~FF:保留
+        sprintf(buf, "%s从节点1通信协议类型:%d(%s)%s", pline_head, pin[7],
+        		(pin[7] == 0) ? "透明传输" : (pin[7] == 1) ? "DL/T645-1997" : (pin[7] == 2) ? "DL/T645-2007" : "保留",
+        		pline_end); //00: 透明传输 01:645-97 02:645-07 03~FF:保留
         pcb(buf);
 
         sprintf(buf, "%s从节点1序号:%d%s", pline_head, (pin[8] << 8) | pin[9], pline_end);
         pcb(buf);
 
-        sprintf(buf, "%s从节点1设备类型:%d%s", pline_head, pin[10], pline_end);
+        sprintf(buf, "%s从节点1设备类型:%d(%s)%s", pline_head, pin[10], (pin[10] == 0) ? "采集器" : (pin[10] == 1) ? "电能表" : "保留", pline_end);
+        pcb(buf);
+
+        sprintf(buf, "%s从节点1下接从节点数量M:%d%s", pline_head, pin[11], pline_end);
         pcb(buf);
 
         for (i = 0; i < pin[12]; i++)
         {
+            sprintf(buf, "%s下接从节点%d通信地址:[%02X %02X %02X %02X %02X %02X]%s",
+                    pline_head, i, pin[i * 7 + 13], pin[i * 7 + 14],
+                    pin[i * 7 + 15], pin[i * 7 + 16], pin[i * 7 + 17],
+                    pin[i * 7 + 18], pline_end);
             pcb(buf);
 
-            sprintf(buf, "%s中继级别:%d%s", pline_head, pin[i * 8 + 8] & 0x0f, pline_end);
+            sprintf(buf, "%s下接从节点%d通信协议类型:%d(%s)%s", pline_head, i, pin[i * 7 + 19],
+            		(pin[i * 7 + 19] == 0) ? "透明传输" : (pin[i * 7 + 19] == 1) ? "645-97" : (pin[i * 7 + 19] == 2) ? "645-07" : "保留",
+            		pline_end); //00: 透明传输 01:645-97 02:645-07 03~FF:保留
             pcb(buf);
-            sprintf(buf, "%s侦听信号品质:%d%s", pline_head, pin[i * 8 + 8] >> 4, pline_end);
-            pcb(buf);
-            sprintf(buf, "%s侦听次数:%d%s", pline_head, pin[i * 8 + 9] & 0x0f, pline_end);
-            pcb(buf);
-            //从节点通信协议类型:
-
         }
     }
 
