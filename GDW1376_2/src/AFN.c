@@ -153,6 +153,14 @@ print_AFNf0(unsigned char dir,
         const char *pline_head,
         const char *pline_end);
 
+extern int
+print_AFNf1(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end);
+
 /*-----------------------------------------------------------------------------
  Section: Function Definitions
  ----------------------------------------------------------------------------*/
@@ -208,6 +216,8 @@ print_AFN(unsigned char dir,
             return print_AFN15(dir, pin + 1, len - 1, pcb, pline_head, pline_end);
         case 0xf0:  //内部测试
             return print_AFNf0(dir, pin + 1, len - 1, pcb, pline_head, pline_end);
+        case 0xf1:  //并发抄表
+            return print_AFNf1(dir, pin + 1, len - 1, pcb, pline_head, pline_end);
         default:
             break;
     }
