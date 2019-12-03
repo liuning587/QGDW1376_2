@@ -122,6 +122,7 @@ AFN10_FN02(unsigned char dir,
         "透明传输",
         "DL/T645-1997",
         "DL/T645-2007",
+        "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -166,7 +167,7 @@ AFN10_FN02(unsigned char dir,
             pcb(buf);
             sprintf(buf, "%s通信协议类型[%d]:%s%s",
                     pline_head, (pin[i * 8 + 10] >> 3) & 0x07,
-                    (((pin[i * 8 + 10] >> 3) & 0x07) < 3) ? type[(pin[i * 8 + 10] >> 3) & 0x07] : "保留",
+                    (((pin[i * 8 + 10] >> 3) & 0x07) < 4) ? type[(pin[i * 8 + 10] >> 3) & 0x07] : "保留",
                     pline_end);
             pcb(buf);
         }
@@ -203,6 +204,7 @@ AFN10_FN03(unsigned char dir,
         "透明传输",
         "DL/T645-1997",
         "DL/T645-2007",
+        "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -244,7 +246,7 @@ AFN10_FN03(unsigned char dir,
             pcb(buf);
             sprintf(buf, "%s通信协议类型[%d]:%s%s",
                     pline_head, (pin[i * 8 + 8] >> 3) & 0x07,
-                    (((pin[i * 8 + 8] >> 3) & 0x07) < 3) ? type[(pin[i * 8 + 8] >> 3) & 0x07] : "保留",
+                    (((pin[i * 8 + 8] >> 3) & 0x07) < 4) ? type[(pin[i * 8 + 8] >> 3) & 0x07] : "保留",
                     pline_end);
             pcb(buf);
         }
@@ -382,6 +384,7 @@ AFN10_FN05(unsigned char dir,
         "透明传输",
         "DL/T645-1997",
         "DL/T645-2007",
+        "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -427,7 +430,7 @@ AFN10_FN05(unsigned char dir,
             pcb(buf);
             sprintf(buf, "%s通信协议类型[%d]:%s%s",
                     pline_head, (pin[i * 8 + 10] >> 3) & 0x07,
-                    (((pin[i * 8 + 10] >> 3) & 0x07) < 3) ? type[(pin[i * 8 + 10] >> 3) & 0x07] : "保留",
+                    (((pin[i * 8 + 10] >> 3) & 0x07) < 4) ? type[(pin[i * 8 + 10] >> 3) & 0x07] : "保留",
                     pline_end);
             pcb(buf);
         }
@@ -464,6 +467,7 @@ AFN10_FN06(unsigned char dir,
         "透明传输",
         "DL/T645-1997",
         "DL/T645-2007",
+        "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -508,7 +512,7 @@ AFN10_FN06(unsigned char dir,
             pcb(buf);
             sprintf(buf, "%s通信协议类型[%d]:%s%s",
                     pline_head, (pin[i * 8 + 10] >> 3) & 0x07,
-                    (((pin[i * 8 + 10] >> 3) & 0x07) < 3) ? type[(pin[i * 8 + 10] >> 3) & 0x07] : "保留",
+                    (((pin[i * 8 + 10] >> 3) & 0x07) < 4) ? type[(pin[i * 8 + 10] >> 3) & 0x07] : "保留",
                     pline_end);
             pcb(buf);
         }
@@ -585,6 +589,7 @@ AFN10_FN101(unsigned char dir,
         "透明传输",
         "DL/T645-1997",
         "DL/T645-2007",
+        "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -626,7 +631,7 @@ AFN10_FN101(unsigned char dir,
             pcb(buf);
             sprintf(buf, "%s通信协议类型[%d]:%s%s",
                     pline_head, (pin[i * 8 + 10] >> 3) & 0x07,
-                    (((pin[i * 8 + 10] >> 3) & 0x07) < 3) ? type[(pin[i * 8 + 10] >> 3) & 0x07] : "保留",
+                    (((pin[i * 8 + 10] >> 3) & 0x07) < 4) ? type[(pin[i * 8 + 10] >> 3) & 0x07] : "保留",
                     pline_end);
             pcb(buf);
             sprintf(buf, "%s软件版本[%02X %02X %02X]: 应用程序版本:%02X%02X boot版本:%02X%s", pline_head,

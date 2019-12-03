@@ -123,6 +123,8 @@ get_commtype_str(unsigned char commtype)
 
     switch (commtype)
     {
+    	case 0:
+    	    return "保留";
         case 1:
             return "集中式路由载波通信";
         case 2:
@@ -136,7 +138,7 @@ get_commtype_str(unsigned char commtype)
         default:
             break;
     }
-    return "保留";
+    return "备用";
 }
 
 /**
@@ -221,7 +223,7 @@ get_AFN_name(unsigned char afn)
         case 0x03:
             return "查询数据";
         case 0x04:
-            return "链路检测";
+            return "链路接口检测";
         case 0x05:
             return "控制命令";
         case 0x06:
@@ -239,7 +241,7 @@ get_AFN_name(unsigned char afn)
         case 0x15:
             return "文件传输";
         case 0xf0:
-            return "内部测试";
+            return "内部调试";
         case 0xf1:
             return "并发抄表";
         default:

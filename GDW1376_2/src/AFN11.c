@@ -77,6 +77,7 @@ AFN11_FN01(unsigned char dir,
         "透明传输",
         "DL/T645-1997",
         "DL/T645-2007",
+        "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -101,7 +102,7 @@ AFN11_FN01(unsigned char dir,
             pcb(buf);
             sprintf(buf, "%s通信协议类型[%d]:%s%s",
                     pline_head, pin[i * 7 + 7],
-                    (pin[i * 7 + 7] < 3) ? type[pin[i * 7 + 7]] : "保留",
+                    (pin[i * 7 + 7] < 4) ? type[pin[i * 7 + 7]] : "保留",
                     pline_end);
             pcb(buf);
         }
@@ -413,6 +414,9 @@ print_AFN11(unsigned char dir,
             return AFN11_FN05(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 6: //终止从节点主动注册
             return AFN11_FN06(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 100: //todo: 设置网络规模
+        case 101: //todo: 启动网络维护进程
+        case 102: //todo: 启动组网
         default:
             break;
     }

@@ -77,6 +77,7 @@ AFN06_FN01(unsigned char dir,
         "透明传输",
         "DL/T645-1997",
         "DL/T645-2007",
+        "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -107,7 +108,7 @@ AFN06_FN01(unsigned char dir,
             pcb(buf);
             sprintf(buf, "%s从节点%d通信协议类型[%d]:%s%s",
                     pline_head, i, pin[9*i + 7],
-                    (pin[9*i + 7] < 3) ? type[pin[9*i + 7]] : "保留",
+                    (pin[9*i + 7] < 4) ? type[pin[9*i + 7]] : "保留",
                     pline_end);
             pcb(buf);
             sprintf(buf, "%s从节点%d序号[%02X %02X]:%d%s", pline_head, i,
@@ -148,6 +149,7 @@ AFN06_FN02(unsigned char dir,
         "透明传输",
         "DL/T645-1997",
         "DL/T645-2007",
+        "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -165,7 +167,7 @@ AFN06_FN02(unsigned char dir,
         pcb(buf);
         sprintf(buf, "%s从节点通信协议类型[%d]:%s%s",
                 pline_head, pin[2],
-                (pin[2] < 3) ? type[pin[2]] : "保留",
+                (pin[2] < 4) ? type[pin[2]] : "保留",
                 pline_end);
         pcb(buf);
         sprintf(buf, "%s当前报文本地通信上行时长[%02X %02X]:%ds%s", pline_head,
@@ -275,7 +277,7 @@ AFN06_FN04(unsigned char dir,
         pcb(buf);
 
         sprintf(buf, "%s从节点1通信协议类型:%d(%s)%s", pline_head, pin[7],
-        		(pin[7] == 0) ? "透明传输" : (pin[7] == 1) ? "DL/T645-1997" : (pin[7] == 2) ? "DL/T645-2007" : "保留",
+        		(pin[7] == 0) ? "透明传输" : (pin[7] == 1) ? "DL/T645-1997" : (pin[7] == 2) ? "DL/T645-2007" : (pin[7] == 3) ? "DL/T698.45" : "保留",
         		pline_end); //00: 透明传输 01:645-97 02:645-07 03~FF:保留
         pcb(buf);
 
@@ -297,7 +299,7 @@ AFN06_FN04(unsigned char dir,
             pcb(buf);
 
             sprintf(buf, "%s下接从节点%d通信协议类型:%d(%s)%s", pline_head, i, pin[i * 7 + 19],
-            		(pin[i * 7 + 19] == 0) ? "透明传输" : (pin[i * 7 + 19] == 1) ? "645-97" : (pin[i * 7 + 19] == 2) ? "645-07" : "保留",
+            		(pin[i * 7 + 19] == 0) ? "透明传输" : (pin[i * 7 + 19] == 1) ? "645-97" : (pin[i * 7 + 19] == 2) ? "645-07" : (pin[i * 7 + 19] == 3) ? "698.45" : "保留",
             		pline_end); //00: 透明传输 01:645-97 02:645-07 03~FF:保留
             pcb(buf);
         }
@@ -334,6 +336,7 @@ AFN06_FN05(unsigned char dir,
         "透明传输",
         "DL/T645-1997",
         "DL/T645-2007",
+        "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -350,7 +353,7 @@ AFN06_FN05(unsigned char dir,
         pcb(buf);
         sprintf(buf, "%s从节点通信协议类型[%d]:%s%s",
                 pline_head, pin[1],
-                (pin[1] < 3) ? type[pin[1]] : "保留",
+                (pin[1] < 4) ? type[pin[1]] : "保留",
                 pline_end);
         pcb(buf);
         sprintf(buf, "%s报文长度L:%d%s", pline_head, pin[2], pline_end);

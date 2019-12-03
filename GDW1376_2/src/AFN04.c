@@ -153,6 +153,7 @@ AFN04_FN03(unsigned char dir,
         "透明传输",
         "DL/T645-1997",
         "DL/T645-2007",
+        "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -168,7 +169,7 @@ AFN04_FN03(unsigned char dir,
         pcb(buf);
         sprintf(buf, "%s通信协议类型[%d]:%s%s",
                 pline_head, pin[7],
-                (pin[7] < 3) ? type[pin[7]] : "无效",
+                (pin[7] < 4) ? type[pin[7]] : "无效",
                 pline_end);
         pcb(buf);
 

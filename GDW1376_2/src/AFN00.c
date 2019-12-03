@@ -113,7 +113,6 @@ AFN00_FN01(unsigned char dir,
     pcb(buf);
     pcb(pline_end);
 
-
     return ERR_NONE;
 }
 
@@ -168,7 +167,6 @@ AFN00_FN02(unsigned char dir,
         pcb("±∏”√");
     }
     pcb(pline_end);
-
 
     return ERR_NONE;
 }

@@ -90,6 +90,9 @@ AFN02_FN01(unsigned char dir,
         case 0x02:
             pcb("DL/T645-2007");
             break;
+        case 0x03:
+            pcb("DL/T698.45");
+            break;
         default:
             pcb("±£¡Ù");
             break;
