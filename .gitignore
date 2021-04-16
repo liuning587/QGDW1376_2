@@ -6,3 +6,7 @@
 /build-gw13762-unknown-Release
 /GDW1376_2/.settings
 /GDW1376_2/X86_DLL
+/py103762/master/UI/__pycache__/*.pyc
+/py103762/master/trans/__pycache__/*.pyc
+/py103762/master/others/__pycache__/*.pyc
+/py103762/master/__pycache__/*.pyc

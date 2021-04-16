@@ -91,27 +91,54 @@ AFNF1_FN01(unsigned char dir,
             pline_end);
     pcb(buf);
 
-    plen = (pin[2] << 8) | pin[1];
-    sprintf(buf, "%s报文长度L:%d%s", pline_head, plen, pline_end);
-    pcb(buf);
-
-    CHK_APP_LEN(len, 3 + plen);
-
-    pcb(pline_head);
-    pcb(" 报文内容:");
-    pcb(pline_end);
-    pcb(pline_head);
-    for (i = 0; i < plen; i++)
+    if (dir == 0)   //下行
     {
-        sprintf(buf, "%02X ", pin[i + 3]);
+        plen = (pin[3] << 8) | pin[2];
+        sprintf(buf, "%s报文长度L:%d%s", pline_head, plen, pline_end);
         pcb(buf);
-        if (((i + 1) % 16) == 0)
+
+        CHK_APP_LEN(len, 4 + plen);
+
+        pcb(pline_head);
+        pcb(" 报文内容:");
+        pcb(pline_end);
+        pcb(pline_head);
+        for (i = 0; i < plen; i++)
         {
-            pcb(pline_end);
-            pcb(pline_head);
+            sprintf(buf, "%02X ", pin[i + 4]);
+            pcb(buf);
+            if (((i + 1) % 16) == 0)
+            {
+                pcb(pline_end);
+                pcb(pline_head);
+            }
         }
+        pcb(pline_end);
     }
-    pcb(pline_end);
+    else //上行
+    {
+        plen = (pin[2] << 8) | pin[1];
+        sprintf(buf, "%s报文长度L:%d%s", pline_head, plen, pline_end);
+        pcb(buf);
+
+        CHK_APP_LEN(len, 3 + plen);
+
+        pcb(pline_head);
+        pcb(" 报文内容:");
+        pcb(pline_end);
+        pcb(pline_head);
+        for (i = 0; i < plen; i++)
+        {
+            sprintf(buf, "%02X ", pin[i + 3]);
+            pcb(buf);
+            if (((i + 1) % 16) == 0)
+            {
+                pcb(pline_end);
+                pcb(pline_head);
+            }
+        }
+        pcb(pline_end);
+    }
 
     return 0;
 }

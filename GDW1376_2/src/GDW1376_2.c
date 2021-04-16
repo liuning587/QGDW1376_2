@@ -582,4 +582,43 @@ GDW1376_2_changelog(void)
     return CHANGE_LOG;
 }
 
+static int pos = 0;
+static char py_out[1024*8];
+static void
+py_print_cb(const char *pstr)
+{
+    strncpy(py_out + pos, pstr, sizeof(py_out) - pos - 1);
+    pos += strlen(pstr);
+}
+
+/**
+ ******************************************************************************
+ * @brief   GDW1376_2报文解析(py使用)
+ * @param[in]  *phex       : 输入报文
+ * @param[out] *pout       : 输出报文
+ * @param[in]  len         : 输出报文缓存长度
+ *
+ * @retval  -1  : 解析出错
+ * @retval   0  : 解析成功
+ ******************************************************************************
+ */
+int
+GDW1376_2_parse_foy_py(const char *phex,
+        char *pout,
+        int len)
+{
+    unsigned char inbuf[4096];
+    int inlen = txt_to_buf(phex, strlen(phex), inbuf, sizeof(inbuf));
+    memset(py_out, 0x00, sizeof(py_out));
+    int ret = GDW1376_2_parse(inbuf, inlen, py_print_cb, "", "\n");
+    strncpy(pout, py_out, len);
+    if (ret)
+    {
+        int slen = strlen(pout);
+        strncpy(pout + slen, GDW1376_2_error(ret), len - slen);
+    }
+    pos = 0;
+    return ret;
+}
+
 /*------------------------------GDW1376_2.c----------------------------------*/
