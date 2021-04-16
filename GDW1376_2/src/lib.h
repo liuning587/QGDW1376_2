@@ -57,5 +57,11 @@ pcb_len_err(pcallback pcb,
         int len,
         int checklen);
 
+extern int
+txt_to_buf(const char *pin,
+        int inlen,
+        unsigned char  *pout,
+        int olen);
+
 #endif /* LIB_H_ */
 /*------------------------------End of lib.h---------------------------------*/

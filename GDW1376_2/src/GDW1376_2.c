@@ -11,6 +11,7 @@
  Section: Includes
  ----------------------------------------------------------------------------*/
 #include <stdio.h>
+#include <string.h>
 #include "types.h"
 #include "maths.h"
 #include "../inc/GDW1376_2.h"
@@ -499,6 +500,29 @@ GDW1376_2_parse(const unsigned char *pin,
     pcb(pline_end);
 
     return ret;
+}
+
+/**
+ ******************************************************************************
+ * @brief   GDW1376_2报文解析(字符串)
+ * @param[in]  *phex       : 输入报文
+ * @param[in]  *pcb        : 回调函数
+ * @param[in]  *pline_head : 每行起始填充字符串
+ * @param[in]  *pline_end  : 每行结束填充字符串
+ *
+ * @retval  -1  : 解析出错
+ * @retval   0  : 解析成功
+ ******************************************************************************
+ */
+int
+GDW1376_2_parse_str(const char *phex,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    unsigned char inbuf[2048];
+    int inlen = txt_to_buf(phex, strlen(phex), inbuf, sizeof(inbuf));
+    return GDW1376_2_parse(inbuf, inlen, pcb, pline_head, pline_end);
 }
 
 /**

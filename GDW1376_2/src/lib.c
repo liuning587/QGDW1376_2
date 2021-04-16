@@ -155,4 +155,56 @@ pcb_len_err(pcallback pcb,
     }
 }
 
+/**
+ ******************************************************************************
+ * @brief   txt转buf方法
+ * @param[in]  *pin : 输入txt文本
+ * @param[in]  inlen: 输入txt文本长度
+ * @param[out] *pout: 输出报文
+ * @param[in]  olen : 输出报文缓存长度
+ *
+ * @retval 转换后buf的长度
+ *
+ * daemo: "1asbsaaa123456478923" --> 1A BA AA 12 34 56 47 89 23
+ ******************************************************************************
+ */
+int
+txt_to_buf(const char *pin,
+        int inlen,
+        unsigned char  *pout,
+        int olen)
+{
+    unsigned char v;
+    int rlen = 0;
+
+    olen <<= 1;
+
+    while (inlen-- && (olen > rlen))
+    {
+        if ((*pin >= '0') && (*pin <= '9'))
+        {
+            v = *pin - '0';
+        }
+        else if ((*pin >= 'a') && (*pin <= 'f'))
+        {
+            v = *pin - 'a' + 10;
+        }
+        else if ((*pin >= 'A') && (*pin <= 'F'))
+        {
+            v = *pin - 'A' + 10;
+        }
+        else
+        {
+            pin++;
+            continue;
+        }
+
+        pout[rlen >> 1] = (rlen & 1) ? ((pout[rlen >> 1] << 4) | v) : v;
+        rlen++;
+        pin++;
+    }
+
+    return (rlen + 1) >> 1;
+}
+
 /*---------------------------------lib.c-------------------------------------*/

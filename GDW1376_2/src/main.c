@@ -16,6 +16,8 @@
 static const unsigned char test[] = {0x68, 0x0F, 0x00, 0x41, 0x01, 0x00, 0xFF,
         0x00, 0x00, 0x00, 0x03, 0x01, 0x00, 0x45, 0x16};
 
+static const char *ptest = "68 1E 00 83 04 00 00 00 00 32 72 57 28 09 00 00 00 00 00 00 00 00 F1 01 00 02 00 00 A7 16";
+
 static void
 print_cb(const char *pstr)
 {
@@ -25,6 +27,12 @@ print_cb(const char *pstr)
 int main(void) {
     int ret;
 	ret = GDW1376_2_parse(test, sizeof(test), print_cb, "", "\n");
+	if (ret)
+	{
+	    puts(GDW1376_2_error(ret));
+	}
+
+	ret = GDW1376_2_parse_str(ptest, print_cb, "", "\n");
 	if (ret)
 	{
 	    puts(GDW1376_2_error(ret));

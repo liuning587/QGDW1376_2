@@ -51,6 +51,12 @@ GDW1376_2_parse(const unsigned char *pin,
         const char *pline_head,
         const char *pline_end);
 
+extern int
+GDW1376_2_parse_str(const char *phex,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end);
+
 extern const char *
 GDW1376_2_error(int errid);
 
