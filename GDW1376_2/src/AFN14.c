@@ -310,6 +310,8 @@ print_AFN14(unsigned char dir,
             return AFN14_FN02(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 3: //请求依通信延时修正通信数据
             return AFN14_FN03(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 4: //todo: 路由请求交采信息
+//            return AFN14_FN04(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         default:
             break;
     }

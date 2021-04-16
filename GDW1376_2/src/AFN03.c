@@ -924,6 +924,10 @@ print_AFN03(unsigned char dir,
             return AFN03_FN10(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 11: //本地通信模块AFN索引
             return AFN03_FN11(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 12: //todo: 询本地主节点通信模块 ID号信息
+//            return AFN03_FN12(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 16: //todo: 查询宽带载波通信参数
+//            return AFN03_FN16(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 100: //查询场强门限
             return AFN03_FN100(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         default:

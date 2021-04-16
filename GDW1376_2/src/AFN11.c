@@ -414,9 +414,12 @@ print_AFN11(unsigned char dir,
             return AFN11_FN05(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 6: //终止从节点主动注册
             return AFN11_FN06(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-        case 100: //todo: 设置网络规模
-        case 101: //todo: 启动网络维护进程
-        case 102: //todo: 启动组网
+//        case 100: //todo: 设置网络规模
+//            return AFN11_FN100(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 101: //todo: 启动网络维护进程
+//            return AFN11_FN101(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 102: //todo: 启动组网
+//            return AFN11_FN102(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         default:
             break;
     }

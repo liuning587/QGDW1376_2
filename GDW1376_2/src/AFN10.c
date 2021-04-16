@@ -685,10 +685,22 @@ print_AFN10(unsigned char dir,
             return AFN10_FN05(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 6: //主动注册的从节点信息
             return AFN10_FN06(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 7: //todo: 查询从节点ID号信息
+//            return AFN10_FN07(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 9: //todo: 查询网络规模
+//            return AFN10_FN09(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 21: //todo: 查询网络拓扑信息
+//            return AFN10_FN21(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 31: //todo: 查询相位信息
+//            return AFN10_FN31(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 40: //todo: 查询ID信息
+//            return AFN10_FN40(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 100: //查询网络规模
             return AFN10_FN100(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 101: //查询微功率无线从节点信息
             return AFN10_FN101(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 104: //todo: 查询升级后模块版本信息
+//            return AFN10_FN104(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         default:
             break;
     }

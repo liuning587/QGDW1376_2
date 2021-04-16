@@ -435,6 +435,10 @@ print_AFN05(unsigned char dir,
             return AFN05_FN04(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 5: //设置无线通信参数
             return AFN05_FN05(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 6: //todo: 允许/禁止台区识别
+//            return AFN05_FN06(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+//        case 16: //todo: 设置宽带载波通信参数
+//            return AFN05_FN16(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 100: //设置场强门限
             return AFN05_FN100(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 101: //设置中心节点时间
