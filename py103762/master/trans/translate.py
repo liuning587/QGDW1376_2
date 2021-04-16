@@ -57,7 +57,6 @@ class Translate:
         try:
             parse = QGDW103762Class()
             ret, res_str = parse.parse_all(m_text)
-            print('ret:', ret)
             if ret != 0:
                 chk_res = False
         except Exception:
