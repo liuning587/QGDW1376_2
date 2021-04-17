@@ -13,7 +13,7 @@ else:
 def main(file_path=''):
     """main"""
     # QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-    app = QtWidgets.QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     config.ABOUT_WINDOW = AboutWindow()
     config.TRANS_WINDOW = TransWindow()
     config.TRANS_WINDOW.show()
