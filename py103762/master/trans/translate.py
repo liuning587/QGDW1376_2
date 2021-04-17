@@ -46,6 +46,7 @@ class Translate:
     """translate class"""
     def __init__(self, m_text):
         """init"""
+        self.parse = QGDW103762Class()
         self.source_msg = commonfun.format_text(m_text)
         self.res_str, self.is_success = self.__trans_all(m_text)
 
@@ -55,8 +56,7 @@ class Translate:
         res_str = ''
         chk_res = True
         try:
-            parse = QGDW103762Class()
-            ret, res_str = parse.parse_all(m_text)
+            ret, res_str = self.parse.parse_all(m_text)
             if ret != 0:
                 chk_res = False
         except Exception:
