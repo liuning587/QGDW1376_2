@@ -26,17 +26,17 @@ print_cb(const char *pstr)
 
 int main(void) {
     int ret;
-	ret = GDW1376_2_parse(test, sizeof(test), print_cb, "", "\n");
-	if (ret)
-	{
-	    puts(GDW1376_2_error(ret));
-	}
+    ret = GDW1376_2_parse(test, sizeof(test), print_cb, "", "\n");
+    if (ret)
+    {
+        puts(GDW1376_2_error(ret));
+    }
 
-	ret = GDW1376_2_parse_str(ptest, print_cb, "", "\n");
-	if (ret)
-	{
-	    puts(GDW1376_2_error(ret));
-	}
-	return EXIT_SUCCESS;
+    ret = GDW1376_2_parse_str(ptest, print_cb, "", "\n");
+    if (ret)
+    {
+        puts(GDW1376_2_error(ret));
+    }
+    return EXIT_SUCCESS;
 }
 #endif

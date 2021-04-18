@@ -159,7 +159,7 @@ AFN05_FN03(unsigned char dir,
         "DL/T645-1997",
         "DL/T645-2007",
         "相位识别功能",
-		//todo: "DL/T698.45",
+        //todo: "DL/T698.45",
     };
 
     pcb(pline_head);
@@ -311,6 +311,92 @@ AFN05_FN05(unsigned char dir,
 
 /**
  ******************************************************************************
+ * @brief   输出允许/禁止台区上报
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN05_FN06(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    pcb(pline_head);
+    pcb("允许/禁止台区上报"); //0禁止，1允许
+    pcb(pline_end);
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 1);
+        sprintf(buf, "%s台区识别使能标志[%d]:%s%s", pline_head, pin[0],
+                (pin[0] == 0) ? "允许" : "禁止", pline_end);
+        pcb(buf);
+    }
+    else    //上行
+    {
+        //无
+    }
+
+    return ERR_NONE;
+}
+
+/**
+ ******************************************************************************
+ * @brief   设置宽带载波通信参数
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN05_FN16(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    const char * const type[] =
+    {
+        "1.953~11.96MHz",
+        "2.441~5.615MHz",
+        "0.781~2.930MHz",
+        "1.758~2.930MHz",
+    };
+
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 1);  //发送的设置数据是一字节
+        sprintf(buf, "%s设置宽带载波通信参数[%d]:%s%s", pline_head, pin[0],
+                (pin[0] < 4) ? type[pin[0]] : "无效", pline_end);
+
+        pcb(buf);
+    }
+    else    //上行
+    {
+        //无
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
  * @brief   输出设置场强门限解析字符串
  * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
  * @param[in]  *pin         : 输入报文
@@ -435,10 +521,10 @@ print_AFN05(unsigned char dir,
             return AFN05_FN04(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 5: //设置无线通信参数
             return AFN05_FN05(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 6: //todo: 允许/禁止台区识别
-//            return AFN05_FN06(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 16: //todo: 设置宽带载波通信参数
-//            return AFN05_FN16(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 6: //允许/禁止台区识别
+            return AFN05_FN06(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 16: //设置宽带载波通信参数
+            return AFN05_FN16(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 100: //设置场强门限
             return AFN05_FN100(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 101: //设置中心节点时间

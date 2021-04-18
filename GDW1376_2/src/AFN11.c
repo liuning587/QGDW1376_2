@@ -368,6 +368,120 @@ AFN11_FN06(unsigned char dir,
 
 /**
  ******************************************************************************
+ * @brief   设置网络规模
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN11_FN100(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    pcb(pline_head);
+    pcb("设置网络规模 ");
+    pcb(pline_end);
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 2);
+        sprintf(buf, "%s网络规模[%02X %02X]:%d%s", pline_head, pin[0], pin[1],
+                pin[0] | ((int)pin[1] << 8), pline_end);
+        pcb(buf);
+    }
+    else    //上行
+    {
+        //无
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
+ * @brief   启动网络维护进程
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN11_FN101(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    pcb(pline_head);
+    pcb("启动网络维护进程 ");
+    pcb(pline_end);
+    if (dir == 0)   //下行
+    {
+        //无
+    }
+    else    //上行
+    {
+        //无
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
+ * @brief   启动组网
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN11_FN102(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    pcb(pline_head);
+    pcb("启动组网 ");
+    pcb(pline_end);
+    if (dir == 0)   //下行
+    {
+        //无
+    }
+    else    //上行
+    {
+        //无
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
  * @brief   输出路由设置解析字符串
  * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
  * @param[in]  *pin         : 输入报文
@@ -414,12 +528,12 @@ print_AFN11(unsigned char dir,
             return AFN11_FN05(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 6: //终止从节点主动注册
             return AFN11_FN06(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 100: //todo: 设置网络规模
-//            return AFN11_FN100(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 101: //todo: 启动网络维护进程
-//            return AFN11_FN101(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 102: //todo: 启动组网
-//            return AFN11_FN102(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 100: //设置网络规模
+            return AFN11_FN100(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 101: //启动网络维护进程
+            return AFN11_FN101(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 102: //启动组网
+            return AFN11_FN102(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         default:
             break;
     }

@@ -836,6 +836,123 @@ AFN03_FN11(unsigned char dir,
 
 /**
  ******************************************************************************
+ * @brief   查询本地主节点通信模块 ID 号信息
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN03_FN12(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    int i;
+    const char * const idformat[] =
+    {
+        "组合格式",
+        "BCD",
+        "BIN",
+        "ASCII",
+    };
+
+    pcb(pline_head);
+    pcb("查询本地主节点通信模块 ID 号信息");
+    pcb(pline_end);
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 0);
+    }
+    else    //上行
+    {
+        CHK_APP_LEN(len, pin[2] + 4);
+        sprintf(buf, "%s模块厂商代码:[%02X %02X]%s", pline_head, pin[0], pin[1],
+                pline_end);
+        pcb(buf);
+        sprintf(buf, "%s模块ID号长度L:%d%s", pline_head, pin[2], pline_end);
+        pcb(buf);
+        sprintf(buf, "%s模块ID号格式[%d]:%s%s", pline_head, pin[3],
+                (pin[3] < 4) ? idformat[pin[3]] : "模块ID格式错误", pline_end);
+        pcb(buf);
+        pcb(pline_head);
+        pcb(" 模块ID号:");
+        pcb(pline_end);
+        pcb(pline_head);
+        for (i = 0; i < pin[2]; i++)
+        {
+            sprintf(buf, "%02X ", pin[i + 4]);
+            pcb(buf);
+            if (((i + 1) % 16) == 0)  //16个字节换行
+            {
+                pcb(pline_end);
+                pcb(pline_head);
+            }
+        }
+        pcb(pline_end);
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
+ * @brief   查询宽带载波通信参数数据单元格式
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN03_FN16(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    const char * const type[] =
+    {
+        "1.953~11.96MHz", //00H
+        "2.441~5.615MHz", //01H
+        "0.781~2.930MHz", //02H
+        "1.758~2.930MHz", //03H
+    };
+
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 0); //下发的数据长度必须len = 0，0316是没有要下发的数据，只要下发查询功码即可。
+        pcb(pline_head);
+        pcb("查询宽带载波通信参数");
+        pcb(pline_end);
+    }
+    else    //上行
+    {
+        CHK_APP_LEN(len, 1);  //返回的数据必须是一个字节
+        sprintf(buf, "%s查询宽带载波通信参数[%d]:%s%s", pline_head, pin[0],
+                (pin[0] < 4) ? type[pin[0]] : "无效", pline_end);
+        pcb(buf);
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
  * @brief   输出查询场强门限解析字符串
  * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
  * @param[in]  *pin         : 输入报文
@@ -924,10 +1041,10 @@ print_AFN03(unsigned char dir,
             return AFN03_FN10(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 11: //本地通信模块AFN索引
             return AFN03_FN11(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 12: //todo: 询本地主节点通信模块 ID号信息
-//            return AFN03_FN12(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 16: //todo: 查询宽带载波通信参数
-//            return AFN03_FN16(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 12: //询本地主节点通信模块 ID号信息
+            return AFN03_FN12(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 16: //查询宽带载波通信参数
+            return AFN03_FN16(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 100: //查询场强门限
             return AFN03_FN100(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         default:

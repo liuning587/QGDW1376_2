@@ -124,8 +124,8 @@ get_commtype_str(unsigned char commtype)
 
     switch (commtype)
     {
-    	case 0:
-    	    return "保留";
+        case 0:
+            return "保留";
         case 1:
             return "集中式路由载波通信";
         case 2:

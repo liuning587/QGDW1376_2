@@ -523,6 +523,361 @@ AFN10_FN06(unsigned char dir,
 
 /**
  ******************************************************************************
+ * @brief   查询从节点ID号信息
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN10_FN07(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    int i, moduleid ;
+    const char * const idformat[] =
+    {
+        "组合格式",
+        "BCD",
+        "BIN",
+        "ASCII",
+    };
+
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 3);
+        sprintf(buf, "%s从节点起始序号[%02X %02X]:%d%s", pline_head,
+                        pin[0], pin[1], pin[0] | ((int)pin[1] << 8), pline_end);
+                pcb(buf);
+        sprintf(buf, "%s从节点数量[%02x]:%d%s", pline_head, pin[2], pin[2], pline_end);
+                pcb(buf);
+
+    }
+    else    //上行
+    {
+        sprintf(buf, "%s从节点总数量[%02X %02X]:%d%s", pline_head,
+                pin[0], pin[1], pin[0] | ((int)pin[1] << 8), pline_end);
+        pcb(buf);
+        sprintf(buf, "%s本次应答的从节点数量n:%d%s", pline_head, pin[2], pline_end);
+        pcb(buf);
+        if (len < (pin[2] * (11 + pin[12]) + 3)) //数据部分长度
+        {
+            sprintf(buf, "%s输入报文长度不足解析失败!%s", pline_head,  pline_end);
+            pcb(buf);
+            return -1;
+        }
+
+        for (i = 0; i < pin[2]; i++)
+        {
+            sprintf(buf, "%s从节点%d地址:[%02X %02X %02X %02X %02X %02X]%s",
+                    pline_head, i, pin[i * 12 + 3], pin[i * 12 + 4],
+                    pin[i * 12 + 5], pin[i * 12 + 6], pin[i * 12 + 7],
+                    pin[i * 12 + 8], pline_end);
+            pcb(buf);
+
+            sprintf(buf, "%s从节点%d地址类型:%d%s", pline_head, i+1, pin[i * 8 + 9], pline_end);
+            pcb(buf);
+            moduleid = (pin[i * 8 + 11] << 8) | pin[i * 8 + 10];
+            sprintf(buf, "%s从节点%d模块厂商代码:%d%s", pline_head, i+1, moduleid, pline_end);
+            pcb(buf);
+            sprintf(buf, "%s从节点%d模块ID号长度:%d%s", pline_head, i+1,pin[i * 8 + 12], pline_end);
+            pcb(buf);
+            sprintf(buf, "%s从节点%d模块ID号格式:%d%s", pline_head, i+1,pin[i * 8 + 13], pline_end);
+            pcb(buf);
+
+            sprintf(buf, "%s从节点%d模块ID号格式:%s%s", pline_head, pin[i * 8 + 13],
+                    (pin[0] < 4) ? idformat[pin[i * 8 + 13]] : "保留",
+                    pline_end);
+            pcb(buf);
+            sprintf(buf, "%s从节点%d模块ID号:%d%s", pline_head, i+1, pin[i * 8 + 14], pline_end);
+            pcb(buf);
+        }
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
+ * @brief   查询HPLC网络规模
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN10_FN09(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    pcb(pline_head);
+    pcb("查询HPLC网络规模");
+    pcb(pline_end);
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 0);
+    }
+    else    //上行
+    {
+        CHK_APP_LEN(len, 2);
+        sprintf(buf, "%sHPLC网络规模[%02X %02X]:%d%s", pline_head,
+                pin[0], pin[1], pin[0] | ((int)pin[1] << 8), pline_end);
+        pcb(buf);
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
+ * @brief   查询拓扑网络信息
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN10_FN21(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    int i;
+    pcb(pline_head);
+    pcb("查询拓扑网络规模");
+    pcb(pline_end);
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 3); //
+        sprintf(buf, "%s从节点起始序号[%02X %02X]:%d%s", pline_head, pin[0], pin[1],
+                pin[0] | ((int)pin[1] << 8), pline_end);
+        pcb(buf);
+        sprintf(buf, "%s从节点数量[%02X]:%d%s", pline_head, pin[2], pin[2],
+                pline_end);
+        pcb(buf);
+    }
+    else    //上行
+    {
+        sprintf(buf, "%s从节点总数量[%02X %02X]:%d%s", pline_head,
+                pin[0], pin[1], pin[0] | ((int)pin[1] << 8), pline_end);
+        pcb(buf);
+        sprintf(buf, "%s从节点起始序号[%02X %02X]:%d%s", pline_head,
+                pin[2], pin[3], pin[2] | ((int)pin[2] << 8),pline_end);
+        pcb(buf);
+        sprintf(buf, "%s本次应答的节点数量:%d%s", pline_head, pin[4], pline_end);
+        pcb(buf);
+        if (len < (pin[2] * 11 + 3))
+        {
+            sprintf(buf, "%s输入报文长度不足解析失败!%s", pline_head, pline_end);
+            pcb(buf);
+            return -1;
+        }
+        for (i = 0; i < pin[4]; i++)
+        {
+            sprintf(buf, "%s节点%d地址:[%02X %02X %02X %02X %02X %02X]%s",
+                    pline_head, i, pin[i * 11 + 5], pin[i * 11 + 6],
+                    pin[i * 11 + 7], pin[i * 11 + 8], pin[i * 11 + 9],
+                    pin[i * 11 + 10], pline_end);
+            pcb(buf);
+            sprintf(buf, "%s节点%d网络拓扑信息:[%02X %02X %02X %02X %02X]%s",
+                    pline_head, i, pin[i * 11 + 11], pin[i * 11 + 12],
+                    pin[i * 11 + 13], pin[i * 11 + 14], pin[i * 11 + 15],
+                    pline_end);
+            pcb(buf);
+        }
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
+ * @brief   查询相线信息
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN10_FN31(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    int i;
+    pcb(pline_head);
+    pcb("查询相线");
+    pcb(pline_end);
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 3);
+        sprintf(buf, "%s从节点起始序号[%02X %02X]:%d%s", pline_head,
+                pin[0], pin[1], pin[0] | ((int)pin[1] << 8), pline_end);
+        pcb(buf);
+        sprintf(buf, "%s从节点数量[%02X]:%d%s", pline_head, pin[2], pin[2], pline_end);
+        pcb(buf);
+    }
+    else    //上行
+    {
+        sprintf(buf, "%s从节点总数量[%02X %02X]:%d%s", pline_head,
+                pin[0], pin[1], pin[0] | ((int)pin[1] << 8), pline_end);
+        pcb(buf);
+        sprintf(buf, "%s从节点起始序号[%02X %02X]:%d%s", pline_head,
+                pin[2], pin[3], pin[2] | ((int)pin[2] << 8),pline_end);
+        pcb(buf);
+        sprintf(buf, "%s本次应答的节点数量:%d%s", pline_head,pin[4], pline_end);
+        pcb(buf);
+        if (len < (pin[2] * 8 + 3))
+        {
+            sprintf(buf, "%s输入报文长度不足解析失败!%s", pline_head, pline_end);
+            pcb(buf);
+            return -1;
+        }
+        for (i = 0; i < pin[4]; i++)
+        {
+            sprintf(buf, "%s节点%d地址:[%02X %02X %02X %02X %02X %02X]%s",
+                    pline_head, i, pin[i * 8 + 5], pin[i * 8 + 6],
+                    pin[i * 8 + 7], pin[i * 8 + 8], pin[i * 8 + 9],
+                    pin[i * 8 + 10], pline_end);
+            pcb(buf);
+            sprintf(buf, "%s节点%d相线信息:[%02X %02X]%s", pline_head, i,
+                    pin[i * 8 + 11], pin[i * 8 + 12], pline_end);
+            pcb(buf);
+        }
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
+ * @brief   流水线查询ID信息
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN10_FN40(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    const char * const devtype[] =
+    {
+        "未定义的设备类型",
+        "抄控器",
+        "CCO",
+        "电表通信单元",
+        "中继器",
+        "II型采集器",
+        "I型采集器",
+        "三相表通信单元",
+    };
+    const char * const idtype[] =
+    {
+        "未定义的ID类型",
+        "芯片ID",
+        "模块ID",
+    };
+
+    pcb(pline_head);
+    pcb("流水线查询ID信息");
+    pcb(pline_end);
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 8);
+        sprintf(buf, "%s设备类型[%d]:%s%s", pline_head, pin[0],
+               (pin[0] < 8) ? devtype[pin[0]] : "未定义的设备类型", pline_end);
+        pcb(buf);
+        sprintf(buf, "%s节点地址:[%02X %02X %02X %02X %02X %02X]%s",
+                pline_head, pin[1], pin[2],pin[3], pin[4], pin[5],
+                pin[6], pline_end);
+        pcb(buf);
+        sprintf(buf, "%sID类型[%d]:%s%s", pline_head, pin[6],
+                (pin[0] < 3) ? idtype[pin[6]] : "未定义的ID类型", pline_end);
+        pcb(buf);
+    }
+    else    //上行
+    {
+        CHK_APP_LEN(len, 33);//若为芯片ID，len=33；若为模块ID，其ID长度定义在其它文档中
+        sprintf(buf, "%s设备类型[%d]:%s%s", pline_head, pin[0],
+                (pin[0] < 8) ? devtype[pin[0]] : "未定义的设备类型", pline_end);
+        pcb(buf);
+        sprintf(buf, "%s节点地址:[%02X %02X %02X %02X %02X %02X]%s",
+                pline_head, pin[1], pin[2],pin[3], pin[4], pin[5],
+                pin[6], pline_end);
+        pcb(buf);
+        sprintf(buf, "%sID类型[%d]:%s%s", pline_head, pin[6],
+                (pin[0] < 3) ? idtype[pin[6]] : "未定义的ID类型", pline_end);
+        pcb(buf);
+        sprintf(buf, "%sID长度L:%d%s", pline_head, pin[7], pline_end);
+        pcb(buf);
+        if(pin[0] == 1) //如果是芯片ID则输出对应的ID信息，模组ID不知道是几个字节376.2协议中未说明
+        {
+            sprintf(buf, "%sID信息:[%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X "
+                    "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X]%s",
+                    pline_head, pin[8], pin[9],pin[10], pin[11], pin[12],pin[13],
+                    pin[14], pin[15],pin[16], pin[17], pin[18],pin[19],
+                    pin[20], pin[21],pin[22], pin[23], pin[24],pin[25],
+                    pin[26], pin[27],pin[28], pin[29], pin[30],pin[31],pline_end);
+            pcb(buf);
+        }
+        else
+        {
+             pcb(pline_head);
+             pcb("未定义");
+             pcb(pline_end);
+        }
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
  * @brief   输出查询网络规模解析字符串
  * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
  * @param[in]  *pin         : 输入报文
@@ -685,21 +1040,21 @@ print_AFN10(unsigned char dir,
             return AFN10_FN05(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 6: //主动注册的从节点信息
             return AFN10_FN06(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 7: //todo: 查询从节点ID号信息
-//            return AFN10_FN07(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 9: //todo: 查询网络规模
-//            return AFN10_FN09(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 21: //todo: 查询网络拓扑信息
-//            return AFN10_FN21(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 31: //todo: 查询相位信息
-//            return AFN10_FN31(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 40: //todo: 查询ID信息
-//            return AFN10_FN40(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-        case 100: //查询网络规模
+        case 7: //todo: 查询从节点ID号信息(待完善)
+            return AFN10_FN07(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 9: //查询HPLC网络规模
+            return AFN10_FN09(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 21: //查询网络拓扑信息
+            return AFN10_FN21(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 31: //查询相线信息
+            return AFN10_FN31(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 40: //查询ID信息
+            return AFN10_FN40(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 100: //查询无线网络规模
             return AFN10_FN100(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 101: //查询微功率无线从节点信息
             return AFN10_FN101(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 104: //todo: 查询升级后模块版本信息
+//        case 104: //todo: 查询升级后模块版本信息(376.2协议中没有)
 //            return AFN10_FN104(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         default:
             break;

@@ -278,6 +278,67 @@ AFN14_FN03(unsigned char dir,
 
 /**
  ******************************************************************************
+ * @brief   路由请求交采信息
+ * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
+ * @param[in]  *pin         : 输入报文
+ * @param[in]   len         : 应用层报文长度
+ * @param[in]  *pcb         : 回调函数
+ * @param[in]  *pline_head  : 每行起始填充字符串
+ * @param[in]  *pline_end   : 每行结束填充字符串
+ *
+ * @return  0 : 解析成功
+ * @return -1 : 解析失败
+ ******************************************************************************
+ */
+static int
+AFN14_FN04(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    const char * const type[] =
+    {
+        "未定义",
+        "DL/T645-2007",
+        "DL/T698.45",
+    };
+
+    pcb(pline_head);
+    pcb("路由请求交采信息");
+    pcb(pline_end);
+
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 9); //fixme: 数据长度变长
+        sprintf(buf, "%s数据项类型[%d]:%s%s", pline_head, pin[0],
+                (pin[0] < 2) ? type[pin[0]] : "保留", pline_end);
+        pcb(buf);
+        sprintf(buf, "%s交采数据项标识:[%02X %02X %02X %02X]%s", pline_head, pin[1],
+                pin[2], pin[3], pin[4], pline_end);
+        pcb(buf);
+        sprintf(buf, "%s交采数据项内容:[%02X %02X %02X %02X]%s", pline_head, pin[5],
+                pin[6], pin[7], pin[8], pline_end);
+        pcb(buf);
+    }
+    else    //上行
+    {
+        CHK_APP_LEN(len, 6);
+        sprintf(buf, "%s数据项类型[%d]:%s%s", pline_head, pin[0],
+                (pin[0] < 3) ? type[pin[0]] : "保留", pline_end);
+        pcb(buf);
+
+        sprintf(buf, "%s交采数据项标识:[%02X %02X %02X %02X]%s", pline_head, pin[1],
+                pin[2], pin[3], pin[4], pline_end);
+        pcb(buf);
+    }
+
+    return 0;
+}
+
+/**
+ ******************************************************************************
  * @brief   输出路由数据抄读解析字符串
  * @param[in]   dir         : 传输方向:1上行(模块->集中器)" 0下行(集中器->模块)
  * @param[in]  *pin         : 输入报文
@@ -310,8 +371,8 @@ print_AFN14(unsigned char dir,
             return AFN14_FN02(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 3: //请求依通信延时修正通信数据
             return AFN14_FN03(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-//        case 4: //todo: 路由请求交采信息
-//            return AFN14_FN04(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 4: //todo: 路由请求交采信息
+            return AFN14_FN04(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         default:
             break;
     }
