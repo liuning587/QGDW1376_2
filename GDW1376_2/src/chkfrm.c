@@ -79,7 +79,12 @@ chkfrm_GDW1376_2(const unsigned char *pin,
 
     packlen = ((unsigned int)pin[1]) | (((unsigned int)pin[2]) << 8);
 
-    if (packlen != len)
+    if (packlen < len)
+    {
+        return ERR_CHKFRM_LEN_LONG;
+    }
+
+    if (packlen > len)
     {
         return -ERR_CHKFRM_LEN;
     }

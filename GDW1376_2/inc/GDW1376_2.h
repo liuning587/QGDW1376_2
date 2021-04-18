@@ -30,6 +30,7 @@ extern "C"
 #define ERR_CHKFRM_cs       (5)     /**< 报文cs错误 */
 #define ERR_AFN_FN          (6)     /**< 不支持的FN*/
 #define ERR_APP_LEN         (7)     /**< 应用数据LEN有误 */
+#define ERR_CHKFRM_LEN_LONG (8)     /**< 输入报文太多 */
 
 /*-----------------------------------------------------------------------------
  Section: Type Definitions
