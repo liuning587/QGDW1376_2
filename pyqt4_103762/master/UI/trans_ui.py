@@ -121,7 +121,7 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
             save_config.add_last_file(filepath)
             save_config.commit()
             file_size = os.path.getsize(filepath)
-            if file_size > 3*0x100000:
+            if file_size > 5*0x100000:
                 reply = QtGui.QMessageBox.question(self, '警告', '打开大型文件会使用较长时间，确定打开吗？',\
                                 QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
                 if reply != QtGui.QMessageBox.Yes:

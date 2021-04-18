@@ -155,7 +155,8 @@ AFN00_FN02(unsigned char dir,
     };
 
     pcb(pline_head);
-    pcb("否认报文:");
+    sprintf(buf, "否认报文[%02X(%d)]:", pin[0], pin[0]);
+    pcb(buf);
     CHK_APP_LEN(len, 1);
 
     if (pin[0] < 13)
@@ -164,7 +165,21 @@ AFN00_FN02(unsigned char dir,
     }
     else
     {
-        pcb("备用");
+        switch (pin[0])
+        {
+        case 109:
+            pcb("超过最大并发数");
+            break;
+        case 110:
+            pcb("超过单个 Q/GDW10376.2帧最大允许的电表协议报文");
+            break;
+        case 111:
+            pcb("正在抄读该表");
+            break;
+        default:
+            pcb("备用");
+            break;
+        }
     }
     pcb(pline_end);
 

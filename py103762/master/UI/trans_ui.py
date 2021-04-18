@@ -117,13 +117,12 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
             filepath = action.text()
         if not os.path.isfile(filepath):
             filepath,_ = QtWidgets.QFileDialog.getOpenFileName(self, caption='请选择10376.2日志文件', filter='*')
-
         if filepath:
             save_config = master_config.MasterConfig()
             save_config.add_last_file(filepath)
             save_config.commit()
             file_size = os.path.getsize(filepath)
-            if file_size > 3*0x100000:
+            if file_size > 5*0x100000:
                 reply = QtWidgets.QMessageBox.question(self, '警告', '打开大型文件会使用较长时间，确定打开吗？',\
                                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
                 if reply != QtWidgets.QMessageBox.Yes:
