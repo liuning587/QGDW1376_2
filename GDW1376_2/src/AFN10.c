@@ -692,21 +692,21 @@ AFN10_FN21(unsigned char dir,
         pcb(buf);
         sprintf(buf, "%s本次应答的节点数量:%d%s", pline_head, pin[4], pline_end);
         pcb(buf);
-        if (len < (pin[2] * 11 + 3))
+        if (len < (pin[4] * 11 + 5))
         {
             sprintf(buf, "%s输入报文长度不足解析失败!%s", pline_head, pline_end);
             pcb(buf);
             return -1;
         }
-        for (i = 0; i < pin[4]; i++)
+        for (i =0; i < pin[4]; i++) //节点序号1开始
         {
             sprintf(buf, "%s节点%d地址:[%02X %02X %02X %02X %02X %02X]%s",
-                    pline_head, i, pin[i * 11 + 5], pin[i * 11 + 6],
+                    pline_head, i+1, pin[i * 11 + 5], pin[i * 11 + 6],
                     pin[i * 11 + 7], pin[i * 11 + 8], pin[i * 11 + 9],
                     pin[i * 11 + 10], pline_end);
             pcb(buf);
             sprintf(buf, "%s节点%d网络拓扑信息:[%02X %02X %02X %02X %02X]%s",
-                    pline_head, i, pin[i * 11 + 11], pin[i * 11 + 12],
+                    pline_head, i+1, pin[i * 11 + 11], pin[i * 11 + 12],
                     pin[i * 11 + 13], pin[i * 11 + 14], pin[i * 11 + 15],
                     pline_end);
             pcb(buf);
@@ -1174,28 +1174,29 @@ AFN10_FN112(unsigned char dir,
         pcb(buf);
         sprintf(buf, "%s本次应答的从节点数量:%d%s", pline_head, pin[4], pline_end);
         pcb(buf);
+
         for (i = 0; i < pin[4]; i++)
         {
             pcb(pline_end);
             int pos =  i*33 + 5;
-            sprintf(buf, "%s节点%d 地址:[%02X %02X %02X %02X %02X %02X]%s", pline_head, i,
+            sprintf(buf, "%s节点%d 地址:[%02X %02X %02X %02X %02X %02X]%s", pline_head, i+1,
                     pin[pos], pin[pos + 1], pin[pos + 2], pin[pos + 3], pin[pos + 4], pin[pos + 5],
                     pline_end);
             pcb(buf);
-            sprintf(buf, "%s节点%d 设备类型[%02X]:%s%s", pline_head, i, pin[pos + 6],
+            sprintf(buf, "%s节点%d 设备类型[%02X]:%s%s", pline_head, i+1, pin[pos + 6],
                     (pin[pos + 6] < 8) ? type[pin[pos + 6]] : "保留",  pline_end);
             pcb(buf);
             sprintf(buf, "%s节点%d ID信息:[%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X "
                     "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X]%s",
-                    pline_head, i,
+                    pline_head, i+1,
                     pin[pos + 7],  pin[pos + 8],  pin[pos + 9], pin[pos + 10], pin[pos + 11], pin[pos + 12],
                     pin[pos + 13], pin[pos + 14], pin[pos + 15],pin[pos + 16], pin[pos + 17], pin[pos + 18],
                     pin[pos + 19], pin[pos + 20], pin[pos + 21],pin[pos + 22], pin[pos + 23], pin[pos + 24],
                     pin[pos + 25], pin[pos + 26], pin[pos + 27],pin[pos + 28], pin[pos + 29], pin[pos + 30],
                     pline_end);
             pcb(buf);
-            sprintf(buf, "%s节点%d 软件版本信息[%02X %02X]:%d%s", pline_head, i,
-                    pin[31], pin[32], pin[31] | ((int)pin[32] << 8), pline_end);
+            sprintf(buf, "%s节点%d 软件版本信息[%02X %02X]:%d%s", pline_head, i+1,
+                    pin[pos + 31], pin[pos + 32], pin[pos + 31] | ((int)pin[pos + 32] << 8), pline_end);
             pcb(buf);
         }
     }
