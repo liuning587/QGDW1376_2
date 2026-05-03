@@ -2,6 +2,7 @@
 import os
 from master import config
 from master.UI import linebox
+from master.trans.format_output import INDENT_CHOICES
 if config.IS_USE_PYSIDE:
     from PySide2 import QtGui, QtCore, QtWidgets
 else:
@@ -131,6 +132,11 @@ class TransWindowUi():
         
         self.proc_l = QtWidgets.QLabel()
         self.proc_l.setText('就绪')
+        self.indent_style_cb = QtWidgets.QComboBox()
+        self.indent_style_cb.setMinimumWidth(100)
+        for _val, _label in INDENT_CHOICES:
+            self.indent_style_cb.addItem(_label, _val)
+        self.indent_style_cb.setToolTip('解析文本排版：原始 / 块分隔 / 树状竖线（仅显示，不改 DLL）')
         self.auto_wrap_cb = QtWidgets.QCheckBox()
         self.auto_wrap_cb.setText('自动换行')
         self.show_level_cb = QtWidgets.QCheckBox()
@@ -144,6 +150,8 @@ class TransWindowUi():
         self.foot_hbox.addWidget(self.proc_bar)
         self.foot_hbox.addWidget(self.proc_l)
         self.foot_hbox.addStretch(1)
+        self.foot_hbox.addWidget(QtWidgets.QLabel('缩进:'))
+        self.foot_hbox.addWidget(self.indent_style_cb)
         self.foot_hbox.addWidget(self.auto_wrap_cb)
         self.foot_hbox.addWidget(self.show_level_cb)
         self.foot_hbox.addWidget(self.show_dtype_cb)

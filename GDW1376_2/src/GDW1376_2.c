@@ -590,12 +590,22 @@ GDW1376_2_changelog(void)
 }
 
 static int pos = 0;
-static char py_out[1024*8];
+static char py_out[1024 * 64];
 static void
 py_print_cb(const char *pstr)
 {
-    strncpy(py_out + pos, pstr, sizeof(py_out) - pos - 1);
-    pos += strlen(pstr);
+    size_t room;
+
+    if (pstr == NULL)
+        return;
+    if (pos < 0 || (size_t)pos >= sizeof(py_out))
+        return;
+    room = sizeof(py_out) - (size_t)pos - 1u;
+    if (room == 0)
+        return;
+    strncpy(py_out + pos, pstr, room);
+    py_out[sizeof(py_out) - 1] = '\0';
+    pos = (int)strlen(py_out);
 }
 
 /**
@@ -614,15 +624,25 @@ GDW1376_2_parse_foy_py(const char *phex,
         char *pout,
         int len)
 {
-    unsigned char inbuf[4096];
+    unsigned char inbuf[8192];
     int inlen = txt_to_buf(phex, strlen(phex), inbuf, sizeof(inbuf));
+    size_t room;
+
+    pos = 0;
     memset(py_out, 0x00, sizeof(py_out));
     int ret = GDW1376_2_parse(inbuf, inlen, py_print_cb, "", "\n");
-    strncpy(pout, py_out, len);
-    if (ret)
-    {
-        int slen = strlen(pout);
-        strncpy(pout + slen, GDW1376_2_error(ret), len - slen);
+    if (len > 0 && pout != NULL) {
+        strncpy(pout, py_out, (size_t)len - 1u);
+        pout[len - 1] = '\0';
+    }
+    if (ret && len > 0 && pout != NULL) {
+        int slen = (int)strlen(pout);
+        if (slen < 0)
+            slen = 0;
+        room = (size_t)len - (size_t)slen - 1u;
+        if (room > 0)
+            strncpy(pout + slen, GDW1376_2_error(ret), room);
+        pout[len - 1] = '\0';
     }
     pos = 0;
     return ret;

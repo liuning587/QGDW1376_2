@@ -1,11 +1,15 @@
 """log files trans ui"""
+import logging
 import re
 import os
 import sys
 import threading
 import chardet
+
+_log = logging.getLogger(__name__)
 from master.UI.trans_ui_setup import TransWindowUi
-from master.trans.translate import Translate
+from master.trans.translate import Translate, QGDW103762Class
+from master.trans.format_output import INDENT_NONE, parse_plain_to_display_html
 from master.others import master_config
 from master import config
 if config.IS_USE_PYSIDE:
@@ -39,9 +43,31 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
         self.input_box.set_font_size(font_size)
         self.update_wrap_mode()
 
+        saved_ind = apply_config.get_trans_indent_style()
+        for i in range(self.indent_style_cb.count()):
+            if self.indent_style_cb.itemData(i) == saved_ind:
+                self.indent_style_cb.blockSignals(True)
+                self.indent_style_cb.setCurrentIndex(i)
+                self.indent_style_cb.blockSignals(False)
+                break
+
+        self._parser = None
+        try:
+            self._parser = QGDW103762Class()
+            if getattr(self._parser, 'dll_path', None):
+                self.proc_l.setText('就绪 · %s' % self._parser.dll_path)
+        except OSError:
+            self.proc_l.setText('DLL 未加载')
+
+        self._input_scan_timer = QtCore.QTimer(self)
+        self._input_scan_timer.setSingleShot(True)
+        self._input_scan_timer.timeout.connect(self._apply_input_scan)
+        self._clip_cache_key = None
+        self._clip_cache_text = None
+
         self.setAcceptDrops(True)
         self.input_box.cursorPositionChanged.connect(self.cursor_changed)
-        self.input_box.textChanged.connect(self.take_input_text)
+        self.input_box.textChanged.connect(self._schedule_input_scan)
         self.msg_box.textChanged.connect(self.start_trans)
         self.find_last_b.clicked.connect(lambda: self.find_last(True))
         self.find_next_b.clicked.connect(lambda: self.find_next(True))
@@ -55,6 +81,7 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
         self.auto_wrap_cb.clicked.connect(self.update_wrap_mode)
         self.show_level_cb.clicked.connect(self.start_trans)
         self.show_dtype_cb.clicked.connect(self.start_trans)
+        self.indent_style_cb.currentIndexChanged.connect(self._on_indent_style_changed)
         self.always_top_cb.clicked.connect(self.set_always_top)
         self.open_action.triggered.connect(self.openfile)
         self.reload_action.triggered.connect(lambda: self.openfile(filepath=self.file_now))
@@ -77,7 +104,6 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
     def dragEnterEvent(self, event):
         """drag"""
         if event.mimeData().hasUrls:
-            print('has')
             event.accept()
         else:
             event.ignore()
@@ -91,7 +117,7 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
             links = []
             for url in event.mimeData().urls():
                 links.append(str(url.toLocalFile()))
-            print('url:', links[0])
+            _log.debug('drop url: %s', links[0])
             self.openfile(links[0])
         else:
             event.ignore()
@@ -134,8 +160,8 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
             self.setWindowTitle('10376.2日志解析工具 {ver} - {file}'.\
                         format(ver=config.MASTER_WINDOW_TITLE_ADD, file=filepath))
             self.file_now = filepath
-            threading.Thread(target=self.read_file,\
-                                args=(filepath,)).start()
+            threading.Thread(
+                target=self.read_file, args=(filepath,), daemon=True).start()
 
 
     def read_file(self, filepath):
@@ -143,7 +169,7 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
         # get file encoding
         with open(filepath, "rb") as file:
             encoding = chardet.detect(file.read(65535))
-            print(encoding)
+            _log.debug('chardet: %s', encoding)
             if encoding['confidence'] > 0.95:
                 file_encoding = encoding['encoding']
             else:
@@ -160,7 +186,7 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
                 if i % 500 == 0:
                     self.set_progress.emit(i*95 / count)
         self.load_file.emit(file_text)
-        print('read_file thread quit')
+        _log.debug('read_file thread done')
 
 
     def cursor_changed(self):
@@ -168,8 +194,10 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
         document = self.input_box.document()
         cursor = self.input_box.textCursor()
         scroll = self.input_box.verticalScrollBar()
-        print('cursor: %d, scroll: %d, document: %d'\
-            %(cursor.blockNumber(), scroll.value(), document.findBlock(cursor.position()).blockNumber()))
+        _log.debug(
+            'cursor: %d, scroll: %d, document: %d',
+            cursor.blockNumber(), scroll.value(),
+            document.findBlock(cursor.position()).blockNumber())
 
         if self.last_selection[0] <= int(self.input_box.textCursor().position())\
                                     <= self.last_selection[1]:
@@ -190,7 +218,12 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
                 self.last_selection = (0, 0)
 
 
-    def take_input_text(self):
+    def _schedule_input_scan(self):
+        """Debounce hex scan on large pastes."""
+        self._input_scan_timer.stop()
+        self._input_scan_timer.start(280)
+
+    def _apply_input_scan(self):
         """handle with input text"""
         input_text = self.input_box.toPlainText()
         res = re.compile(r'([0-9a-fA-F]{2} ?){6,}[0-9a-fA-F]{2}')
@@ -206,19 +239,67 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
 
         self.find_l.setText('')
 
+    def _on_indent_style_changed(self):
+        """Persist indent and refresh parse."""
+        ind = self.indent_style_cb.currentData()
+        if ind is None:
+            ind = INDENT_NONE
+        save_config = master_config.MasterConfig()
+        save_config.set_trans_indent_style(ind)
+        save_config.commit()
+        self.start_trans()
 
     def start_trans(self):
         """start_trans"""
         if len(self.msg_box.toPlainText()) < 5:
             self.output_box.setText('请点选一条报文。\n若软件无法识别请手动复制到上方框中。')
+            self._clip_cache_key = None
+            self._clip_cache_text = None
             return
-        trans = Translate(self.msg_box.toPlainText())
+        if self._parser is None:
+            self.output_box.setText(
+                '<p style="color:red">无法加载 GDW1376_2 解析库。请将 GDW1376_2_64.dll '
+                '放在本程序目录或上级 GDW1376_2 编译输出目录。</p>')
+            self._clip_cache_key = None
+            self._clip_cache_text = None
+            return
+        msg = self.msg_box.toPlainText()
+        trans = Translate(msg, parser=self._parser)
         brief = trans.get_brief()
-        full = trans.get_full(self.show_level_cb.isChecked(), self.show_dtype_cb.isChecked())
+        ind = self.indent_style_cb.currentData()
+        if ind is None:
+            ind = INDENT_NONE
+        full = trans.get_full(
+            self.show_level_cb.isChecked(),
+            self.show_dtype_cb.isChecked(),
+            is_output_html=False,
+            indent_style=ind,
+        )
+        self._clip_cache_key = (
+            msg, ind, self.show_level_cb.isChecked(), self.show_dtype_cb.isChecked())
+        self._clip_cache_text = trans.get_clipboard_text(
+            self.show_level_cb.isChecked(),
+            self.show_dtype_cb.isChecked(),
+            indent_style=ind,
+        )
+        _out_style = (
+            'white-space:pre-wrap;font-family:Consolas,\'Courier New\',monospace;'
+            'font-size:13px;line-height:1.35;margin:0.2em 0;'
+        )
         if brief == '':
-            self.output_box.setText(r'<b>【解析】</b><pre>%s</pre>'%(full))
+            self.output_box.setText(
+                '<b>【解析】</b><div style="%s">%s</div>'
+                % (_out_style, parse_plain_to_display_html(full)))
         else:
-            self.output_box.setText(r'<b>【概览】</b><p>%s</p><hr><b>【完整】</b>%s'%(brief, full))
+            self.output_box.setText(
+                '<b>【概览】</b><div style="%s">%s</div><hr>'
+                '<b>【完整】</b><div style="%s">%s</div>'
+                % (
+                    _out_style,
+                    parse_plain_to_display_html(brief),
+                    _out_style,
+                    parse_plain_to_display_html(full),
+                ))
 
 
     def clear_box(self):
@@ -319,8 +400,20 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
 
     def copy_to_clipboard(self):
         """copy_to_clipboard"""
-        trans = Translate(self.msg_box.toPlainText())
-        text = trans.get_clipboard_text(self.show_level_cb.isChecked(), self.show_dtype_cb.isChecked())
+        msg = self.msg_box.toPlainText()
+        ind = self.indent_style_cb.currentData()
+        if ind is None:
+            ind = INDENT_NONE
+        key = (msg, ind, self.show_level_cb.isChecked(), self.show_dtype_cb.isChecked())
+        if self._clip_cache_key == key and self._clip_cache_text is not None:
+            text = self._clip_cache_text
+        else:
+            trans = Translate(msg, parser=self._parser)
+            text = trans.get_clipboard_text(
+                self.show_level_cb.isChecked(),
+                self.show_dtype_cb.isChecked(),
+                indent_style=ind,
+            )
         clipboard = QtWidgets.QApplication.clipboard()
         clipboard.clear()
         clipboard.setText(text)
@@ -349,11 +442,11 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
         # save config
         save_config = master_config.MasterConfig()
         save_config.set_font_size(self.input_box.get_font_size())
+        ind = self.indent_style_cb.currentData()
+        save_config.set_trans_indent_style(ind if ind is not None else INDENT_NONE)
         save_config.commit()
 
-        # quit
         event.accept()
-        os._exit(0)
 
 
 if __name__ == '__main__':

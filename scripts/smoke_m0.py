@@ -33,8 +33,11 @@ def main():
     dll.GDW1376_2_error.argtypes = [ctypes.c_int]
     dll.GDW1376_2_error.restype = ctypes.c_char_p
 
+    # Keep in sync with GDW1376_2.c py_out / py103762 translate.PARSE_OUT_BUF_SIZE
+    _out_n = 1024 * 64
+
     def parse_hex(hexstr):
-        out = ctypes.create_string_buffer(1024 * 8)
+        out = ctypes.create_string_buffer(_out_n)
         b = hexstr.replace(" ", "").encode("ascii")
         ret = dll.GDW1376_2_parse_foy_py(b, out, ctypes.sizeof(out))
         msg = out.value.decode("gbk", errors="replace")

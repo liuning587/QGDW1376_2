@@ -1,5 +1,6 @@
 """master config file"""
 import os
+import json
 import configparser
 import random
 from master import config
@@ -124,13 +125,23 @@ class MasterConfig:
         file_list.append(file_path)
         if len(file_list) > 10:
             file_list.pop(0)
-        self.config.set('trans', 'file_list', str(file_list))
+        self.config.set('trans', 'file_list', json.dumps(file_list, ensure_ascii=False))
 
     def get_last_file(self):
         """get_last_file"""
         if not self.config.has_option('trans', 'file_list'):
             self.config.set('trans', 'file_list', '[]')
-        return eval(self.config.get('trans', 'file_list'))
+        raw = self.config.get('trans', 'file_list')
+        try:
+            out = json.loads(raw)
+            if isinstance(out, list):
+                return out
+        except (ValueError, TypeError):
+            pass
+        try:
+            return eval(raw)
+        except Exception:
+            return []
 
     def set_font_size(self, size):
         """set_font_size"""
@@ -141,6 +152,16 @@ class MasterConfig:
         if not self.config.has_option('trans', 'font_size'):
             self.config.set('trans', 'font_size', '9')
         return int(self.config.get('trans', 'font_size'))
+
+    def set_trans_indent_style(self, style):
+        """Persist py103762 trans window indent (none|block|tree)."""
+        self.config.set('trans', 'indent_style', str(style))
+
+    def get_trans_indent_style(self):
+        """Default none."""
+        if not self.config.has_option('trans', 'indent_style'):
+            self.config.set('trans', 'indent_style', 'none')
+        return self.config.get('trans', 'indent_style')
 
     def commit(self):
         """commit config"""
