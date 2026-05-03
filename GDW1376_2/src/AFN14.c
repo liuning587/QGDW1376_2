@@ -70,7 +70,8 @@ AFN14_FN01(unsigned char dir,
         pcallback pcb,
         const char *pline_head,
         const char *pline_end)
-{   int i=3, j=1, k=1;
+{
+    int i;
     pcb(pline_head);
     pcb("路由请求抄读内容");
     pcb(pline_end);
@@ -93,6 +94,7 @@ AFN14_FN01(unsigned char dir,
         }
         else if(pin[0]==2)
         {
+            int L, n, addr0, j, k;
             switch(pin[1])
             {
                 case 0:
@@ -108,38 +110,56 @@ AFN14_FN01(unsigned char dir,
                 default:
                     break;
             }
-            sprintf(buf, "%s路由请求数据长度L=%d%s", pline_head, pin[2],pline_end);
+            if (len < 4)
+            {
+                pcb(pline_head);
+                pcb("ERROR:长度有误!");
+                pcb(pline_end);
+                return -1;
+            }
+            L = pin[2];
+            if (len < 3 + L + 1)
+            {
+                pcb(pline_head);
+                pcb("ERROR:长度有误!");
+                pcb(pline_end);
+                return -1;
+            }
+            sprintf(buf, "%s路由请求数据长度L=%d%s", pline_head, L, pline_end);
             pcb(buf);
             pcb(pline_head);
             pcb("路由请求数据内容为");
-            for(i=3; i<(3+pin[2]); i++)
+            for (i = 3; i < 3 + L; i++)
             {
-              (void)sprintf(buf, "%02X ", pin[i]);
-              pcb(buf);
-            }
-            if(pin[3+pin[2]]>0)
-            {
-                pcb(pline_end);
-                sprintf(buf, "%s从节点附属节点数量n=%d%s", pline_head, pin[3+pin[2]], pline_end);
+                (void)sprintf(buf, "%02X ", pin[i]);
                 pcb(buf);
-                for(j=1; j<pin[3+pin[3]]; j++)
+            }
+            pcb(pline_end);
+            n = pin[3 + L];
+            sprintf(buf, "%s从节点附属节点数量n=%d%s", pline_head, n, pline_end);
+            pcb(buf);
+            if (n > 0)
+            {
+                if (len < 3 + L + 1 + n * 6)
                 {
-                  pcb(pline_head);
-                  sprintf(buf, "从节点附属节点%d地址为", j);
-                  pcb(buf);
-                  for(k=1; k<7; k++)
-                  {
-                   (void)sprintf(buf, "%02X", pin[4+pin[3]+k]);
-                    pcb(buf);
-                  }
-                   pcb(pline_end);
+                    pcb(pline_head);
+                    pcb("ERROR:长度有误!");
+                    pcb(pline_end);
+                    return -1;
                 }
-            }
-            else
-            {
-                pcb(pline_end);
-                sprintf(buf, "%s从节点附属节点数量n=%d%s", pline_head, pin[3+pin[2]], pline_end);
-                pcb(buf);
+                for (j = 0; j < n; j++)
+                {
+                    addr0 = 3 + L + 1 + j * 6;
+                    pcb(pline_head);
+                    sprintf(buf, "从节点附属节点%d地址为", j + 1);
+                    pcb(buf);
+                    for (k = 0; k < 6; k++)
+                    {
+                        (void)sprintf(buf, "%02X", pin[addr0 + k]);
+                        pcb(buf);
+                    }
+                    pcb(pline_end);
+                }
             }
         }
     }

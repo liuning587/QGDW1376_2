@@ -30,6 +30,7 @@ extern "C"
 #define ERR_CHKFRM_cs       (5)     /**< 报文cs错误 */
 #define ERR_AFN_FN          (6)     /**< 不支持的FN*/
 #define ERR_APP_LEN         (7)     /**< 应用数据LEN有误 */
+#define ERR_CHKFRM_LEN_LONG (8)     /**< 输入报文太多 */
 
 /*-----------------------------------------------------------------------------
  Section: Type Definitions
@@ -51,6 +52,12 @@ GDW1376_2_parse(const unsigned char *pin,
         const char *pline_head,
         const char *pline_end);
 
+extern int
+GDW1376_2_parse_str(const char *phex,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end);
+
 extern const char *
 GDW1376_2_error(int errid);
 
@@ -59,6 +66,12 @@ GDW1376_2_ver_str(void);
 
 extern const char *
 GDW1376_2_changelog(void);
+
+/** Python ctypes 等外部调用：与 GDW1376_2_parse 等价，结果写入 pout（含解析文本；失败时追加错误说明） */
+extern int
+GDW1376_2_parse_foy_py(const char *phex,
+        char *pout,
+        int len);
 
 #ifdef __cplusplus
 }

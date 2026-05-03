@@ -221,7 +221,7 @@ print_AFN(unsigned char dir,
         default:
             break;
     }
-    return -1;
+    return -ERR_AFN_FN;
 }
 
 /*---------------------------------AFN.c-------------------------------------*/

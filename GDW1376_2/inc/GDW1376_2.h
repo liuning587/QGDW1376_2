@@ -67,6 +67,12 @@ GDW1376_2_ver_str(void);
 extern const char *
 GDW1376_2_changelog(void);
 
+/** Python ctypes 等外部调用：与 GDW1376_2_parse 等价，结果写入 pout（含解析文本；失败时追加错误说明） */
+extern int
+GDW1376_2_parse_foy_py(const char *phex,
+        char *pout,
+        int len);
+
 #ifdef __cplusplus
 }
 #endif

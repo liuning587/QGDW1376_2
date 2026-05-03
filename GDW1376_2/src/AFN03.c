@@ -816,7 +816,7 @@ AFN03_FN11(unsigned char dir,
         pcb(buf);
         for (i = 0; i < 32 * 8; i++)
         {
-            if (BITS(pin[1 + i / 8], i))
+            if (BITS(pin[1 + i / 8], i % 8))
             {
                 if (!(cnt % 10))
                 {

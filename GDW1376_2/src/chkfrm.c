@@ -59,6 +59,7 @@
  * @retval  -3  : 输入报文长度无效
  * @retval  -4  : 报文尾0x16
  * @retval  -5  : 报文cs错误
+ * @retval  -8  : 缓冲区长度大于单帧 L（可能粘包）
  ******************************************************************************
  */
 int
@@ -81,7 +82,7 @@ chkfrm_GDW1376_2(const unsigned char *pin,
 
     if (packlen < len)
     {
-        return ERR_CHKFRM_LEN_LONG;
+        return -ERR_CHKFRM_LEN_LONG;
     }
 
     if (packlen > len)

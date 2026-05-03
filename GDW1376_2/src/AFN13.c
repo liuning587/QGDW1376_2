@@ -165,7 +165,7 @@ AFN13_FN01(unsigned char dir,
         pcb(pline_head);
         for (i = 0; i < pin[3]; i++)
         {
-            sprintf(buf, "%02X ", pin[i + pos + 4]);
+            sprintf(buf, "%02X ", pin[i + 4]);
             pcb(buf);
             if (((i + 1) % 16) == 0)
             {

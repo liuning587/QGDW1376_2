@@ -14,3 +14,9 @@
 /pyqt4_103762/master/UI/__pycache__/*.pyc
 /pyqt4_103762/master/others/__pycache__/*.pyc
 /pyqt4_103762/master/trans/__pycache__/*.pyc
+GDW1376_2/src/*.o64
+GDW1376_2/src/*.o32
+GDW1376_2/libGDW1376_2_64.a
+GDW1376_2/libGDW1376_2_32.a
+GDW1376_2/GDW1376_2_64.dll
+GDW1376_2/GDW1376_2_32.dll

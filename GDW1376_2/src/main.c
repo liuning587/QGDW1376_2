@@ -21,7 +21,7 @@ static const char *ptest = "68 1E 00 83 04 00 00 00 00 32 72 57 28 09 00 00 00 0
 static void
 print_cb(const char *pstr)
 {
-    printf(pstr);
+    printf("%s", pstr);
 }
 
 int main(void) {

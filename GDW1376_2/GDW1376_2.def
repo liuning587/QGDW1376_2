@@ -1,0 +1,8 @@
+LIBRARY GDW1376_2
+EXPORTS
+    GDW1376_2_parse
+    GDW1376_2_parse_str
+    GDW1376_2_error
+    GDW1376_2_ver_str
+    GDW1376_2_changelog
+    GDW1376_2_parse_foy_py

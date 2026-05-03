@@ -37,6 +37,9 @@ typedef struct
 #define VER_STR         "v0.0.1"    /**< 版本字符串 */
 #define CHANGE_LOG  \
         "-----------------------------------\n"\
+        "2026年5月3日:M2 AFN10-F104 模块版本解析(正文缺表按常见布局/转储);AFN06-F03 台区识别结束;AFN06-F04 按表53可变长解析\n"\
+        "2026年5月3日:M1 AFN10(F04/F07/F21/F31/F40/F111)/AFN03(F11)/AFN13(F01上行)/AFN14(F01下行)字段与长度修正\n"\
+        "2026年5月3日:M0 粘包错误码改为负值;上行信息域电能表通道特征取高4位;未知AFN返回ERR_AFN_FN;头文件补充parse_foy_py声明\n"\
         "2021年4月16日:根据Q/GDW10376.2完善功能\n"\
         "2014年2月24日:完成解析框架\n"\
         ""
@@ -324,8 +327,8 @@ print_struct(const unsigned char *pin,
             sprintf(buf, "%s      实测相线标识[0]: 不确定%s", pline_head, pline_end);
         }
         pcb(buf);
-        sprintf(buf, "%s      电能表通道特征[%d]: %s%s", pline_head, pin[6] >> 8,
-                get_meter_comm_type(pin[6] >> 8), pline_end);
+        sprintf(buf, "%s      电能表通道特征[%d]: %s%s", pline_head, pin[6] >> 4,
+                get_meter_comm_type(pin[6] >> 4), pline_end);
         pcb(buf);
         sprintf(buf, "%s      末级命令信号品质(0无1最低)[%d]%s", pline_head,
                 pin[7] & 0x0f, pline_end);

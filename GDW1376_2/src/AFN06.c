@@ -228,8 +228,17 @@ AFN06_FN03(unsigned char dir,
     }
     else    //上行
     {
+        if (len < 1)
+        {
+            pcb(pline_head);
+            pcb("ERROR:长度有误!");
+            pcb(pline_end);
+            return -ERR_APP_LEN;
+        }
         sprintf(buf, "%s路由工作任务变动类型[%d]:%s%s", pline_head, pin[0],
-                (pin[0] == 1) ? "抄表任务结束" : ((pin[0] == 2) ? "搜表任务结束":"保留"), pline_end);
+                (pin[0] == 1) ? "抄表任务结束"
+                : ((pin[0] == 2) ? "搜表任务结束"
+                : ((pin[0] == 3) ? "台区识别任务结束" : "保留")), pline_end);
         pcb(buf);
     }
 
@@ -258,7 +267,20 @@ AFN06_FN04(unsigned char dir,
         const char *pline_head,
         const char *pline_end)
 {
-    int i;
+    int k;
+    int j;
+    unsigned int pos;
+    unsigned char n;
+    unsigned char M;
+    unsigned char m;
+    const char * const type[] =
+    {
+        "透明传输",
+        "DL/T645-1997",
+        "DL/T645-2007",
+        "DL/T698.45",
+    };
+
     pcb(pline_head);
     pcb("上报从节点信息及设备类型");
     pcb(pline_end);
@@ -266,41 +288,79 @@ AFN06_FN04(unsigned char dir,
     {
         //无
     }
-    else    //上行 todo: 这里解析有问题
+    else    //上行（表 53）
     {
-        sprintf(buf, "%s上报从节点的数量:%d%s", pline_head, pin[0], pline_end);
-        pcb(buf);
-
-        //从节点通信地址6字节
-        sprintf(buf, "%s从节点1通信地址:[%02X %02X %02X %02X %02X %02X]%s",
-                pline_head, pin[1],pin[2], pin[3],  pin[4], pin[5], pin[6], pline_end);
-        pcb(buf);
-
-        sprintf(buf, "%s从节点1通信协议类型:%d(%s)%s", pline_head, pin[7],
-                (pin[7] == 0) ? "透明传输" : (pin[7] == 1) ? "DL/T645-1997" : (pin[7] == 2) ? "DL/T645-2007" : (pin[7] == 3) ? "DL/T698.45" : "保留",
-                pline_end); //00: 透明传输 01:645-97 02:645-07 03~FF:保留
-        pcb(buf);
-
-        sprintf(buf, "%s从节点1序号:%d%s", pline_head, (pin[8] << 8) | pin[9], pline_end);
-        pcb(buf);
-
-        sprintf(buf, "%s从节点1设备类型:%d(%s)%s", pline_head, pin[10], (pin[10] == 0) ? "采集器" : (pin[10] == 1) ? "电能表" : "保留", pline_end);
-        pcb(buf);
-
-        sprintf(buf, "%s从节点1下接从节点数量M:%d%s", pline_head, pin[11], pline_end);
-        pcb(buf);
-
-        for (i = 0; i < pin[12]; i++)
+        if (len < 1)
         {
-            sprintf(buf, "%s下接从节点%d通信地址:[%02X %02X %02X %02X %02X %02X]%s",
-                    pline_head, i, pin[i * 7 + 13], pin[i * 7 + 14],
-                    pin[i * 7 + 15], pin[i * 7 + 16], pin[i * 7 + 17],
-                    pin[i * 7 + 18], pline_end);
+            pcb(pline_head);
+            pcb("ERROR:长度有误!");
+            pcb(pline_end);
+            return -ERR_APP_LEN;
+        }
+        n = pin[0];
+        sprintf(buf, "%s上报从节点的数量 n:%u%s", pline_head, (unsigned)n, pline_end);
+        pcb(buf);
+        pos = 1u;
+        for (k = 0; k < (int)n; k++)
+        {
+            if (len < (int)(pos + 12u))
+            {
+                pcb(pline_head);
+                pcb("ERROR:长度不足(从节点头域)!");
+                pcb(pline_end);
+                return -ERR_APP_LEN;
+            }
+            M = pin[pos + 10u];
+            m = pin[pos + 11u];
+            if (len < (int)(pos + 12u + 7u * (unsigned int)m))
+            {
+                pcb(pline_head);
+                pcb("ERROR:长度不足(下接从节点列表)!");
+                pcb(pline_end);
+                return -ERR_APP_LEN;
+            }
+            sprintf(buf, "%s--- 从节点 #%d ---%s", pline_head, k + 1, pline_end);
             pcb(buf);
+            sprintf(buf, "%s通信地址:[%02X %02X %02X %02X %02X %02X]%s",
+                    pline_head, pin[pos], pin[pos + 1u], pin[pos + 2u],
+                    pin[pos + 3u], pin[pos + 4u], pin[pos + 5u], pline_end);
+            pcb(buf);
+            sprintf(buf, "%s通信协议类型[%02X]:%s%s", pline_head, pin[pos + 6u],
+                    (pin[pos + 6u] < 4) ? type[pin[pos + 6u]] : "保留", pline_end);
+            pcb(buf);
+            sprintf(buf, "%s序号(LE):%u%s", pline_head,
+                    (unsigned)(pin[pos + 7u] | (pin[pos + 8u] << 8)), pline_end);
+            pcb(buf);
+            sprintf(buf, "%s设备类型[%02X]:%s%s", pline_head, pin[pos + 9u],
+                    (pin[pos + 9u] == 0) ? "采集器"
+                    : ((pin[pos + 9u] == 1) ? "电能表" : "保留"), pline_end);
+            pcb(buf);
+            sprintf(buf, "%s下接从节点总数量 M:%u%s", pline_head, (unsigned)M, pline_end);
+            pcb(buf);
+            sprintf(buf, "%s本次上报下接从节点数量 m:%u%s", pline_head, (unsigned)m, pline_end);
+            pcb(buf);
+            for (j = 0; j < (int)m; j++)
+            {
+                unsigned int cbase = pos + 12u + (unsigned int)j * 7u;
 
-            sprintf(buf, "%s下接从节点%d通信协议类型:%d(%s)%s", pline_head, i, pin[i * 7 + 19],
-                    (pin[i * 7 + 19] == 0) ? "透明传输" : (pin[i * 7 + 19] == 1) ? "645-97" : (pin[i * 7 + 19] == 2) ? "645-07" : (pin[i * 7 + 19] == 3) ? "698.45" : "保留",
-                    pline_end); //00: 透明传输 01:645-97 02:645-07 03~FF:保留
+                sprintf(buf, "%s  下接从节点 #%d 地址:[%02X %02X %02X %02X %02X %02X]%s",
+                        pline_head, j + 1,
+                        pin[cbase], pin[cbase + 1u], pin[cbase + 2u],
+                        pin[cbase + 3u], pin[cbase + 4u], pin[cbase + 5u],
+                        pline_end);
+                pcb(buf);
+                sprintf(buf, "%s  下接从节点 #%d 通信协议类型[%02X]:%s%s", pline_head, j + 1,
+                        pin[cbase + 6u],
+                        (pin[cbase + 6u] < 4) ? type[pin[cbase + 6u]] : "保留",
+                        pline_end);
+                pcb(buf);
+            }
+            pos += 12u + 7u * (unsigned int)m;
+        }
+        if (pos != (unsigned int)len)
+        {
+            sprintf(buf, "%s提示: 解析结束偏移%u 与数据单元长度%d 不一致（尾随数据或帧异常）%s",
+                    pline_head, pos, len, pline_end);
             pcb(buf);
         }
     }
