@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""M0 smoke: load GDW1376_2 DLL and run one known-good frame + one sticky-buffer case."""
+"""Smoke: load GDW1376_2 DLL — AFN03 金样、粘包、AFN05-F200、AFN=F0 转储。"""
 import ctypes
 import os
 import sys
@@ -64,6 +64,26 @@ def main():
         print("WARN sticky ret=%r (expected -8 or legacy +8) err=%r" % (ret2, err2))
     if ret2 == 8:
         print("NOTE: DLL is legacy build (ERR_CHKFRM_LEN_LONG as +8); rebuild GDW1376_2 for negative codes.")
+
+    # AFN05 F200 下行（DT1=80H bit7, DT2=18H => Fn=200），拒绝上报标志=01
+    f200 = "68 10 00 41 01 00 FF 00 00 00 05 80 18 01 DF 16"
+    r3, msg3, _ = parse_hex(f200)
+    if r3 != 0:
+        print("FAIL AFN05 F200 ret=%r msg head=%r" % (r3, msg3[:300]))
+        return 1
+    if "80 18" not in msg3:
+        print("FAIL AFN05 F200 missing DT in output:", msg3[:500])
+        return 1
+
+    # AFN=F0H，Fn=1，数据域 11 22（厂家自定义，仅转储）
+    f0 = "68 11 00 41 01 00 FF 00 00 00 F0 01 00 11 22 65 16"
+    r4, msg4, _ = parse_hex(f0)
+    if r4 != 0:
+        print("FAIL AFN F0 ret=%r msg head=%r" % (r4, msg4[:300]))
+        return 1
+    if "11 22" not in msg4.replace("\n", " "):
+        print("FAIL AFN F0 payload not in output:", msg4[:500])
+        return 1
 
     print("OK smoke_m0 DLL=%s" % dll_path)
     return 0

@@ -318,37 +318,72 @@ AFN14_FN04(unsigned char dir,
         const char *pline_head,
         const char *pline_end)
 {
-    const char * const type[] =
-    {
-        "未定义",
-        "DL/T645-2007",
-        "DL/T698.45",
-    };
+    int i;
+    const char *tname;
 
     pcb(pline_head);
     pcb("路由请求交采信息");
     pcb(pline_end);
 
-    if (dir == 0)   //下行
+    if (dir == 0)   //下行（表 117：类型 1 + 标识 4 + 内容 N）
     {
-        CHK_APP_LEN(len, 9); //fixme: 数据长度变长
-        sprintf(buf, "%s数据项类型[%d]:%s%s", pline_head, pin[0],
-                (pin[0] < 2) ? type[pin[0]] : "保留", pline_end);
+        if (len < 5)
+        {
+            pcb(pline_head);
+            pcb("ERROR:长度不足(下行交采头域)!");
+            pcb(pline_end);
+            return -ERR_APP_LEN;
+        }
+        if (pin[0] == 1)
+        {
+            tname = "DL/T645-2007";
+        }
+        else if (pin[0] == 2)
+        {
+            tname = "DL/T698.45";
+        }
+        else
+        {
+            tname = "保留";
+        }
+        sprintf(buf, "%s数据项类型[%02X]:%s%s", pline_head, pin[0], tname, pline_end);
         pcb(buf);
         sprintf(buf, "%s交采数据项标识:[%02X %02X %02X %02X]%s", pline_head, pin[1],
                 pin[2], pin[3], pin[4], pline_end);
         pcb(buf);
-        sprintf(buf, "%s交采数据项内容:[%02X %02X %02X %02X]%s", pline_head, pin[5],
-                pin[6], pin[7], pin[8], pline_end);
-        pcb(buf);
+        pcb(pline_head);
+        pcb("交采数据项内容:");
+        pcb(pline_end);
+        pcb(pline_head);
+        for (i = 0; i < len - 5; i++)
+        {
+            sprintf(buf, "%02X ", pin[5 + i]);
+            pcb(buf);
+            if (((i + 1) % 16) == 0)
+            {
+                pcb(pline_end);
+                pcb(pline_head);
+            }
+        }
+        pcb(pline_end);
     }
-    else    //上行
+    else    //上行（表 113：类型 1 + 标识 4，无内容域）
     {
-        CHK_APP_LEN(len, 6);
-        sprintf(buf, "%s数据项类型[%d]:%s%s", pline_head, pin[0],
-                (pin[0] < 3) ? type[pin[0]] : "保留", pline_end);
+        CHK_APP_LEN(len, 5);
+        if (pin[0] == 1)
+        {
+            tname = "DL/T645-2007";
+        }
+        else if (pin[0] == 2)
+        {
+            tname = "DL/T698.45";
+        }
+        else
+        {
+            tname = "保留";
+        }
+        sprintf(buf, "%s数据项类型[%02X]:%s%s", pline_head, pin[0], tname, pline_end);
         pcb(buf);
-
         sprintf(buf, "%s交采数据项标识:[%02X %02X %02X %02X]%s", pline_head, pin[1],
                 pin[2], pin[3], pin[4], pline_end);
         pcb(buf);
@@ -391,7 +426,7 @@ print_AFN14(unsigned char dir,
             return AFN14_FN02(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 3: //请求依通信延时修正通信数据
             return AFN14_FN03(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
-        case 4: //todo: 路由请求交采信息
+        case 4: //路由请求交采信息（上行表113/下行表117）
             return AFN14_FN04(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         default:
             break;

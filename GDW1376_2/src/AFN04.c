@@ -74,8 +74,9 @@ AFN04_FN01(unsigned char dir,
     pcb(pline_head);
     pcb("发送测试(主/从节点检测命令)");
     pcb(pline_end);
-    if (dir == 0)   //下行
+    if (dir == 0)   //下行（表 36）
     {
+        CHK_APP_LEN(len, 1);
         sprintf(buf, "%s持续时间:%d%s", pline_head, pin[0], pline_end);
         pcb(buf);
     }
@@ -112,8 +113,9 @@ AFN04_FN02(unsigned char dir,
     pcb(pline_head);
     pcb("从节点点名");
     pcb(pline_end);
-    if (dir == 0)   //下行
+    if (dir == 0)   //下行（无数据单元）
     {
+        CHK_APP_LEN(len, 0);
         sprintf(buf, "%s无数据单元%s", pline_head, pline_end);
         pcb(buf);
     }
@@ -159,9 +161,16 @@ AFN04_FN03(unsigned char dir,
     pcb(pline_head);
     pcb("本地通信模块报文通信测试");
     pcb(pline_end);
-    if (dir == 0)   //下行
+    if (dir == 0)   //下行（表 37）
     {
-        sprintf(buf, "%s测试通信序号:%d%s", pline_head, pin[0], pline_end);
+        if (len < 9)
+        {
+            pcb(pline_head);
+            pcb("ERROR:长度不足(头域)!");
+            pcb(pline_end);
+            return -ERR_APP_LEN;
+        }
+        sprintf(buf, "%s测试通信速率[%02X]:%d%s", pline_head, pin[0], pin[0], pline_end);
         pcb(buf);
         sprintf(buf, "%s目标地址:[%02X %02X %02X %02X %02X %02X]%s",
                 pline_head, pin[1], pin[2], pin[3], pin[4], pin[5], pin[6],
@@ -175,6 +184,13 @@ AFN04_FN03(unsigned char dir,
 
         sprintf(buf, "%s报文长度L:%d%s", pline_head, pin[8], pline_end);
         pcb(buf);
+        if (len < (9 + pin[8]))
+        {
+            pcb(pline_head);
+            pcb("ERROR:长度不足(报文内容)!");
+            pcb(pline_end);
+            return -ERR_APP_LEN;
+        }
 
         pcb(pline_head);
         pcb(" 报文内容:");

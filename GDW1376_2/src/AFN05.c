@@ -159,15 +159,21 @@ AFN05_FN03(unsigned char dir,
         "DL/T645-1997",
         "DL/T645-2007",
         "相位识别功能",
-        //todo: "DL/T698.45",
     };
 
     pcb(pline_head);
     pcb("启动广播");
     pcb(pline_end);
-    if (dir == 0)   //下行
+    if (dir == 0)   //下行（表 41）
     {
-        sprintf(buf, "%s控制字[%d]:%s%s",
+        if (len < 2)
+        {
+            pcb(pline_head);
+            pcb("ERROR:长度不足(控制字/L)!");
+            pcb(pline_end);
+            return -ERR_APP_LEN;
+        }
+        sprintf(buf, "%s控制字[%02X]:%s%s",
                 pline_head, pin[0],
                 (pin[0] < 4) ? type[pin[0]] : "保留",
                 pline_end);
@@ -175,6 +181,13 @@ AFN05_FN03(unsigned char dir,
 
         sprintf(buf, "%s报文长度L:%d%s", pline_head, pin[1], pline_end);
         pcb(buf);
+        if (len < (2 + pin[1]))
+        {
+            pcb(pline_head);
+            pcb("ERROR:长度不足(报文内容)!");
+            pcb(pline_end);
+            return -ERR_APP_LEN;
+        }
 
         pcb(pline_head);
         pcb(" 报文内容:");
@@ -332,13 +345,15 @@ AFN05_FN06(unsigned char dir,
         const char *pline_end)
 {
     pcb(pline_head);
-    pcb("允许/禁止台区上报"); //0禁止，1允许
+    pcb("允许/禁止台区识别");
     pcb(pline_end);
-    if (dir == 0)   //下行
+    if (dir == 0)   //下行（表 44：0 禁止；1 允许）
     {
         CHK_APP_LEN(len, 1);
-        sprintf(buf, "%s台区识别使能标志[%d]:%s%s", pline_head, pin[0],
-                (pin[0] == 0) ? "允许" : "禁止", pline_end);
+        sprintf(buf, "%s台区识别使能标志[%02X]:%s%s", pline_head, pin[0],
+                (pin[0] == 0) ? "禁止"
+                : ((pin[0] == 1) ? "允许" : "保留"),
+                pline_end);
         pcb(buf);
     }
     else    //上行
@@ -420,10 +435,10 @@ AFN05_FN100(unsigned char dir,
     pcb(pline_head);
     pcb("设置场强门限");
     pcb(pline_end);
-    if (dir == 0)   //下行 todo
+    if (dir == 0)   //下行（表 46：取值 50～120，默认 96）
     {
         CHK_APP_LEN(len, 1);
-        sprintf(buf, "%s最大超时时间[%02X]:%ds%s", pline_head,
+        sprintf(buf, "%s场强门限[%02X]:%d (建议范围50～120，默认96)%s", pline_head,
                 pin[0], pin[0], pline_end);
         pcb(buf);
     }
@@ -460,11 +475,12 @@ AFN05_FN101(unsigned char dir,
     pcb(pline_head);
     pcb("设置中心节点时间");
     pcb(pline_end);
-    if (dir == 0)   //下行 todo
+    if (dir == 0)   //下行（表 47：秒、分、时、日、月、年 各 1 字节 BCD）
     {
-        CHK_APP_LEN(len, 1);
-        sprintf(buf, "%s最大超时时间[%02X]:%ds%s", pline_head,
-                pin[0], pin[0], pline_end);
+        CHK_APP_LEN(len, 6);
+        sprintf(buf, "%s当前时间(BCD) 秒[%02X] 分[%02X] 时[%02X] 日[%02X] 月[%02X] 年(低字节)[%02X]%s",
+                pline_head, pin[0], pin[1], pin[2], pin[3], pin[4], pin[5],
+                pline_end);
         pcb(buf);
     }
     else    //上行
@@ -473,6 +489,37 @@ AFN05_FN101(unsigned char dir,
     }
 
     return 0;
+}
+
+/**
+ ******************************************************************************
+ * @brief   输出控制拒绝节点上报解析字符串（表 48）
+ ******************************************************************************
+ */
+static int
+AFN05_FN200(unsigned char dir,
+        const unsigned char *pin,
+        int len,
+        pcallback pcb,
+        const char *pline_head,
+        const char *pline_end)
+{
+    pcb(pline_head);
+    pcb("控制拒绝节点上报");
+    pcb(pline_end);
+    if (dir == 0)   //下行
+    {
+        CHK_APP_LEN(len, 1);
+        sprintf(buf, "%s拒绝节点上报标志[%d]:%s%s", pline_head, pin[0],
+                pin[0] ? "允许" : "禁止", pline_end);
+        pcb(buf);
+    }
+    else    //上行
+    {
+        //无
+    }
+
+    return ERR_NONE;
 }
 
 /**
@@ -529,6 +576,8 @@ print_AFN05(unsigned char dir,
             return AFN05_FN100(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         case 101: //设置中心节点时间
             return AFN05_FN101(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
+        case 200: //控制拒绝节点上报
+            return AFN05_FN200(dir, pin + 2, len - 2, pcb, pline_head, pline_end);
         default:
             break;
     }
