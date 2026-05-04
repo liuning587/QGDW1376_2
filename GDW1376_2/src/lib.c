@@ -149,7 +149,8 @@ pcb_len_err(pcallback pcb,
 {
     if (len != checklen)
     {
-        sprintf(buf, "%sERROR:报文应用数据长度有误len[%d]checklen[%d]!%s",
+        snprintf(buf, sizeof(buf),
+                "%sERROR:报文应用数据长度有误len[%d]checklen[%d]!%s",
                 pline_head, len, checklen, pline_end);
         pcb(buf);
     }

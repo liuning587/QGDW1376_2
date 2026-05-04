@@ -1,17 +1,39 @@
 """log files trans ui"""
+import logging
 import re
 import os
 import sys
 import threading
 import chardet
+
+_log = logging.getLogger(__name__)
 from master.UI.trans_ui_setup import TransWindowUi
-from master.trans.translate import Translate
+from master.trans.translate import Translate, QGDW103762Class
+from master.trans.format_output import INDENT_NONE, parse_plain_to_display_html
 from master.others import master_config
 from master import config
 if config.IS_USE_PYSIDE:
     from PySide import QtGui, QtCore
 else:
     from PyQt4 import QtGui, QtCore
+
+# chardet 对「十六进制 + 少量中文」的 UTF-8 日志 confidence 常低于 0.9；0.95 几乎永远走 gb2312 误判。
+_CHARDET_MIN_CONFIDENCE = 0.58
+
+
+def _guess_log_encoding(sample, det):
+    """在 chardet 不够自信时，若样本可严格按 UTF-8 解码则用 UTF-8，否则 gb2312。"""
+    enc = (det.get('encoding') or '').strip()
+    conf = float(det.get('confidence') or 0.0)
+    if enc and conf >= _CHARDET_MIN_CONFIDENCE:
+        return enc
+    try:
+        sample.decode('utf-8')
+    except UnicodeDecodeError:
+        pass
+    else:
+        return 'utf-8'
+    return 'gb2312'
 
 
 class TransWindow(QtGui.QMainWindow, TransWindowUi):
@@ -21,12 +43,27 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
 
     def __init__(self):
         super(TransWindow, self).__init__()
-        qss_file = open(os.path.join(config.SOFTWARE_PATH, 'styles/white_blue.qss')).read()
-        self.setStyleSheet(qss_file)
+        qss_path = os.path.join(config.SOFTWARE_PATH, 'styles', 'white_blue.qss')
+        try:
+            with open(qss_path, encoding='utf-8', errors='replace') as qss_fp:
+                self.setStyleSheet(qss_fp.read())
+        except OSError:
+            _log.warning('stylesheet missing or unreadable: %s', qss_path)
         self.setup_ui()
         self.proc_bar.setVisible(False)
         self.show_level_cb.setChecked(True)
         self.auto_wrap_cb.setChecked(False)
+
+        self._parser = None
+        try:
+            self._parser = QGDW103762Class()
+            if getattr(self._parser, 'dll_path', None):
+                self.proc_l.setText(u'就绪 · %s' % self._parser.dll_path)
+        except OSError:
+            self.proc_l.setText(u'DLL 未加载')
+
+        self._clip_cache_key = None
+        self._clip_cache_text = None
 
         apply_config = master_config.MasterConfig()
         file_list = apply_config.get_last_file()[::-1]
@@ -76,7 +113,6 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
     def dragEnterEvent(self, event):
         """drag"""
         if event.mimeData().hasUrls:
-            print('has')
             event.accept()
         else:
             event.ignore()
@@ -90,7 +126,7 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
             links = []
             for url in event.mimeData().urls():
                 links.append(str(url.toLocalFile()))
-            print('url:', links[0])
+            _log.debug('drop url: %s', links[0])
             self.openfile(links[0])
         else:
             event.ignore()
@@ -109,13 +145,22 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
         self.proc_bar.setValue(percent)
 
 
-    def openfile(self, filepath=''):
-        """open file"""
+    def openfile(self, filepath='', *_args):
+        """open file (QAction.triggered may pass bool checked — ignore as path)."""
         action = self.sender()
-        if isinstance(action, QtGui.QAction) and os.path.isfile(action.text()):
-            filepath = action.text()
+        if isinstance(action, QtGui.QAction):
+            txt = action.text()
+            if isinstance(txt, str) and os.path.isfile(txt):
+                filepath = txt
+        if not isinstance(filepath, str):
+            filepath = ''
         if not os.path.isfile(filepath):
-            filepath = QtGui.QFileDialog.getOpenFileName(self, caption='请选择10376.2日志文件', filter='*')
+            picked = QtGui.QFileDialog.getOpenFileName(
+                self, u'请选择10376.2日志文件', '', '*')
+            if isinstance(picked, tuple):
+                filepath = picked[0] or ''
+            else:
+                filepath = picked or ''
         if filepath:
             save_config = master_config.MasterConfig()
             save_config.add_last_file(filepath)
@@ -133,33 +178,29 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
             self.setWindowTitle('10376.2日志解析工具 {ver} - {file}'.\
                         format(ver=config.MASTER_WINDOW_TITLE_ADD, file=filepath))
             self.file_now = filepath
-            threading.Thread(target=self.read_file,\
-                                args=(filepath,)).start()
+            threading.Thread(
+                target=self.read_file, args=(filepath,), daemon=True).start()
 
 
     def read_file(self, filepath):
-        """read file thread"""
-        # get file encoding
-        with open(filepath, "rb") as file:
-            encoding = chardet.detect(file.read(65535))
-            print(encoding)
-            if encoding['confidence'] > 0.95:
-                file_encoding = encoding['encoding']
-            else:
-                file_encoding = 'gb2312'
-
-        with open(filepath, encoding=file_encoding, errors='ignore') as file:
-            count = 0
-            for _ in file:
-                count += 1
-        with open(filepath, encoding=file_encoding, errors='ignore') as file:
-            file_text = ''
-            for i, line in enumerate(file):
-                file_text += line
-                if i % 500 == 0:
-                    self.set_progress.emit(i*95 / count)
+        """read file thread (single binary read + decode)."""
+        self.set_progress.emit(5)
+        with open(filepath, 'rb') as file:
+            raw = file.read()
+        self.set_progress.emit(25)
+        sample = raw[:65535] if len(raw) > 65535 else raw
+        det = chardet.detect(sample)
+        _log.debug('chardet: %s', det)
+        file_encoding = _guess_log_encoding(sample, det)
+        self.set_progress.emit(45)
+        try:
+            file_text = raw.decode(file_encoding, errors='ignore')
+        except (LookupError, ValueError):
+            file_text = raw.decode('gb2312', errors='ignore')
+        self.set_progress.emit(95)
         self.load_file.emit(file_text)
-        print('read_file thread quit')
+        self.set_progress.emit(100)
+        _log.debug('read_file thread done')
 
 
     def cursor_changed(self):
@@ -167,8 +208,10 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
         document = self.input_box.document()
         cursor = self.input_box.textCursor()
         scroll = self.input_box.verticalScrollBar()
-        print('cursor: %d, scroll: %d, document: %d'\
-            %(cursor.blockNumber(), scroll.value(), document.findBlock(cursor.position()).blockNumber()))
+        _log.debug(
+            'cursor: %d, scroll: %d, document: %d',
+            cursor.blockNumber(), scroll.value(),
+            document.findBlock(cursor.position()).blockNumber())
 
         if self.last_selection[0] <= int(self.input_box.textCursor().position())\
                                     <= self.last_selection[1]:
@@ -209,35 +252,80 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
     def start_trans(self):
         """start_trans"""
         if len(self.msg_box.toPlainText()) < 5:
-            self.output_box.setText('请点选一条报文。\n若软件无法识别请手动复制到上方框中。')
+            self.output_box.setText(
+                u'请点选一条报文。\n若软件无法识别请手动复制到上方框中。')
+            self._clip_cache_key = None
+            self._clip_cache_text = None
             return
-        trans = Translate(self.msg_box.toPlainText())
+        if self._parser is None:
+            self.output_box.setText(
+                u'<p style="color:red">无法加载 GDW1376_2 解析库。请将 DLL 放在程序目录或上级 GDW1376_2 目录。</p>')
+            self._clip_cache_key = None
+            self._clip_cache_text = None
+            return
+        msg = self.msg_box.toPlainText()
+        trans = Translate(msg, parser=self._parser)
         brief = trans.get_brief()
-        full = trans.get_full(self.show_level_cb.isChecked(), self.show_dtype_cb.isChecked())
+        full = trans.get_full(
+            self.show_level_cb.isChecked(),
+            self.show_dtype_cb.isChecked(),
+            is_output_html=False,
+            indent_style=INDENT_NONE,
+        )
+        self._clip_cache_key = (
+            msg, INDENT_NONE, self.show_level_cb.isChecked(),
+            self.show_dtype_cb.isChecked())
+        self._clip_cache_text = trans.get_clipboard_text(
+            self.show_level_cb.isChecked(),
+            self.show_dtype_cb.isChecked(),
+            indent_style=INDENT_NONE,
+        )
+        _out_style = (
+            'white-space:pre-wrap;font-family:Consolas,\'Courier New\',monospace;'
+            'font-size:13px;line-height:1.35;margin:0.2em 0;'
+        )
         if brief == '':
-            self.output_box.setText(r'<b>【解析】</b><pre>%s</pre>'%(full))
+            self.output_box.setText(
+                u'<b>【解析】</b><div style="%s">%s</div>'
+                % (_out_style, parse_plain_to_display_html(full)))
         else:
-            self.output_box.setText(r'<b>【概览】</b><p>%s</p><hr><b>【完整】</b>%s'%(brief, full))
+            self.output_box.setText(
+                u'<b>【概览】</b><div style="%s">%s</div><hr>'
+                u'<b>【完整】</b><div style="%s">%s</div>'
+                % (
+                    _out_style,
+                    parse_plain_to_display_html(brief),
+                    _out_style,
+                    parse_plain_to_display_html(full),
+                ))
 
 
     def clear_box(self):
         """clear_box"""
         self.input_box.setPlainText('')
         self.output_box.setText('')
+        self.find_l.setText('')
+        self.last_find_text = ''
+        self.text_find_list = []
         self.setWindowTitle('10376.2日志解析工具 {ver}'.format(ver=config.MASTER_WINDOW_TITLE_ADD))
         self.input_box.setFocus()
 
 
     def search_text(self, text):
-        """search_text"""
+        """search_text (literal substring)."""
+        if not text:
+            self.text_find_list = []
+            self.find_l.setText('')
+            self.last_find_text = ''
+            return
         input_text = self.input_box.toPlainText()
-        res = re.compile(r'%s'%text)
-        all_match = res.finditer(input_text)
-        self.text_find_list = [mes.span() for mes in all_match]
+        res = re.compile(re.escape(text))
+        self.text_find_list = [mes.span() for mes in res.finditer(input_text)]
         if self.text_find_list:
-            self.find_l.setText('0/%d'%len(self.text_find_list))
+            self.find_l.setText('0/%d' % len(self.text_find_list))
         else:
-            self.find_l.setText('未找到！')
+            self.find_l.setText(u'未找到！')
+        self.last_find_text = text
 
 
     def find_next(self, is_setfocus=True):
@@ -271,7 +359,7 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
         find_text = self.find_box.text()
         if not find_text:
             return
-        if self.find_l.text() or find_text != self.last_find_text:
+        if self.find_l.text() == '' or find_text != self.last_find_text:
             self.search_text(find_text)
         if self.find_l.text() == '未找到！':
             return
@@ -318,8 +406,19 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
 
     def copy_to_clipboard(self):
         """copy_to_clipboard"""
-        trans = Translate(self.msg_box.toPlainText())
-        text = trans.get_clipboard_text(self.show_level_cb.isChecked(), self.show_dtype_cb.isChecked())
+        msg = self.msg_box.toPlainText()
+        key = (
+            msg, INDENT_NONE, self.show_level_cb.isChecked(),
+            self.show_dtype_cb.isChecked())
+        if self._clip_cache_key == key and self._clip_cache_text is not None:
+            text = self._clip_cache_text
+        else:
+            trans = Translate(msg, parser=self._parser)
+            text = trans.get_clipboard_text(
+                self.show_level_cb.isChecked(),
+                self.show_dtype_cb.isChecked(),
+                indent_style=INDENT_NONE,
+            )
         clipboard = QtGui.QApplication.clipboard()
         clipboard.clear()
         clipboard.setText(text)
@@ -350,9 +449,7 @@ class TransWindow(QtGui.QMainWindow, TransWindowUi):
         save_config.set_font_size(self.input_box.get_font_size())
         save_config.commit()
 
-        # quit
         event.accept()
-        os._exit(0)
 
 
 if __name__ == '__main__':

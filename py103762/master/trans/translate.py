@@ -1,16 +1,17 @@
 """translate 10376.2 messages"""
+import ctypes
 import logging
 import os
-import ctypes
 import traceback
 
-_logger = logging.getLogger(__name__)
 import master.trans.common as commonfun
 from master import config
 from master.trans.format_output import format_parse_text
 
 # Must match `py_out` size in GDW1376_2.c (GDW1376_2_parse_foy_py).
 PARSE_OUT_BUF_SIZE = 1024 * 64
+
+_logger = logging.getLogger(__name__)
 
 _REPO_GDW_DIR = os.path.normpath(
     os.path.join(config.SOFTWARE_PATH, '..', 'GDW1376_2'))

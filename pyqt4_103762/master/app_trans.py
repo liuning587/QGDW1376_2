@@ -17,9 +17,8 @@ def main(file_path=''):
     config.ABOUT_WINDOW = AboutWindow()
     config.TRANS_WINDOW = TransWindow()
     config.TRANS_WINDOW.show()
-    print(config.SOFTWARE_PATH)
-    # if file_path:
-    config.TRANS_WINDOW.openfile(file_path)
+    if file_path:
+        config.TRANS_WINDOW.openfile(file_path)
     app.exec_()
     sys.exit(0)
 

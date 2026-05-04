@@ -1,7 +1,10 @@
 """log class"""
+import logging
 import os
 import datetime
 from master import config
+
+_log = logging.getLogger(__name__)
 
 
 class MsgLog:
@@ -10,7 +13,7 @@ class MsgLog:
         now = datetime.datetime.now()
         self.log_dir = log_dir
         self.file_path = os.path.join(log_dir, now.strftime('%Y-%m-%d') + '_msg.log')
-        print('LOG path: ', self.file_path)
+        _log.debug('LOG path: %s', self.file_path)
         config.LOG_PATH = self.file_path
         if not os.path.isdir(self.log_dir):
             os.makedirs(self.log_dir)

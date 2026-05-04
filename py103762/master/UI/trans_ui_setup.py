@@ -11,8 +11,8 @@ else:
 
 class TransWindowUi():
     """ApduDiyDialogUi"""
-    def __init__(self):
-        self.setup_ui()
+    # setup_ui() is invoked once from TransWindow.__init__ after QMainWindow is
+    # constructed; do not call setup_ui from __init__ here or menus duplicate.
 
     def setup_ui(self):
         """set layout"""

@@ -1,15 +1,21 @@
 # coding: utf-8
 """common functions"""
+import logging
 import time
+
+_logger = logging.getLogger(__name__)
 # from master.datas import k_data_s
 
 
 def text2list(m_text):
     """str to list"""
-    m_text = m_text.replace(' ', '').replace('\n', '').upper()  # 处理空格和换行
+    m_text = (m_text or '').replace(' ', '').replace('\n', '').upper()
+    if not m_text:
+        return []
     # 处理FE前缀
     k = 0
-    while m_text[k * 2:(k + 1) * 2] == 'FE':
+    n = len(m_text)
+    while (k + 1) * 2 <= n and m_text[k * 2:(k + 1) * 2] == 'FE':
         k += 1
     m_text = m_text[k * 2:]
     # print('原始报文： ' + m_text + '\n')
@@ -40,6 +46,8 @@ def is_bit(value:'int > 0', bit:'int > 0'):
 
 def chk_format(m_list):
     """chk format"""
+    if not m_list or len(m_list) < 2:
+        return False
     if m_list[0] not in ['68', '98'] or m_list[len(m_list) - 1] != '16':
         return False
     else:
@@ -79,21 +87,30 @@ def get_apdu_list(m_list):
 def get_msg_service_no(m_text):
     """get piid"""
     m_list = text2list(m_text)
-    if m_list[0] != '68':
+    if not m_list or m_list[0] != '68' or len(m_list) < 10:
         return 0xff
     server_addr_len = (int(m_list[4], 16) & 0x0f) + 1
-    service_len = 1 if m_list[8 + server_addr_len] in ['01', '02', '03', '81', '82', '83', '10', '90'] else 2
-    service_no = int(m_list[8 + server_addr_len + service_len], 16) & 0x3f
-    print("service no: ", service_no)
+    idx = 8 + server_addr_len
+    if idx >= len(m_list):
+        return 0xff
+    service_len = 1 if m_list[idx] in ['01', '02', '03', '81', '82', '83', '10', '90'] else 2
+    if idx + service_len >= len(m_list):
+        return 0xff
+    service_no = int(m_list[idx + service_len], 16) & 0x3f
+    _logger.debug('service_no=%s', service_no)
     return service_no
 
 
 def get_apdu_service_no(apdu_text):
     """get piid"""
     m_list = text2list(apdu_text)
+    if not m_list:
+        return 0xff
     service_len = 1 if m_list[0] in ['01', '02', '03', '81', '82', '83', '10', '90'] else 2
+    if service_len >= len(m_list):
+        return 0xff
     service_no = int(m_list[service_len], 16) & 0x3f
-    print("service no: ", service_no)
+    _logger.debug('apdu service_no=%s', service_no)
     return service_no
 
 

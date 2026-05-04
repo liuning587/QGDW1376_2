@@ -1,4 +1,5 @@
 """master config file"""
+import ast
 import os
 import json
 import configparser
@@ -135,13 +136,16 @@ class MasterConfig:
         try:
             out = json.loads(raw)
             if isinstance(out, list):
-                return out
+                return [x for x in out if isinstance(x, str)]
         except (ValueError, TypeError):
             pass
         try:
-            return eval(raw)
-        except Exception:
-            return []
+            out = ast.literal_eval(raw)
+            if isinstance(out, list):
+                return [x for x in out if isinstance(x, str)]
+        except (ValueError, SyntaxError, TypeError):
+            pass
+        return []
 
     def set_font_size(self, size):
         """set_font_size"""

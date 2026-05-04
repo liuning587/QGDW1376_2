@@ -1,4 +1,6 @@
 """master config file"""
+import ast
+import json
 import os
 import configparser
 import random
@@ -124,13 +126,26 @@ class MasterConfig:
         file_list.append(file_path)
         if len(file_list) > 10:
             file_list.pop(0)
-        self.config.set('trans', 'file_list', str(file_list))
+        self.config.set('trans', 'file_list', json.dumps(file_list, ensure_ascii=False))
 
     def get_last_file(self):
         """get_last_file"""
         if not self.config.has_option('trans', 'file_list'):
             self.config.set('trans', 'file_list', '[]')
-        return eval(self.config.get('trans', 'file_list'))
+        raw = self.config.get('trans', 'file_list')
+        try:
+            out = json.loads(raw)
+            if isinstance(out, list):
+                return [x for x in out if isinstance(x, str)]
+        except (ValueError, TypeError):
+            pass
+        try:
+            out = ast.literal_eval(raw)
+            if isinstance(out, list):
+                return [x for x in out if isinstance(x, str)]
+        except (ValueError, SyntaxError, TypeError):
+            pass
+        return []
 
     def set_font_size(self, size):
         """set_font_size"""

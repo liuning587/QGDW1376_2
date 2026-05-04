@@ -526,7 +526,7 @@ GDW1376_2_parse_str(const char *phex,
         const char *pline_head,
         const char *pline_end)
 {
-    unsigned char inbuf[2048];
+    unsigned char inbuf[8192];
     int inlen = txt_to_buf(phex, strlen(phex), inbuf, sizeof(inbuf));
     return GDW1376_2_parse(inbuf, inlen, pcb, pline_head, pline_end);
 }

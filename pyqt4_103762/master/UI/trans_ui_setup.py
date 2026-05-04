@@ -10,8 +10,7 @@ else:
 
 class TransWindowUi():
     """ApduDiyDialogUi"""
-    def __init__(self):
-        self.setup_ui()
+    # setup_ui() is called once from TransWindow.__init__; not from __init__ here.
 
     def setup_ui(self):
         """set layout"""

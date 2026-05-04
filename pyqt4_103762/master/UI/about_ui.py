@@ -41,7 +41,7 @@ class AboutWindow(QtGui.QDialog):
             self.about_box.setText(text)
 
         self.foot_text = QtGui.QLabel()
-        self.foot_text.setText('<p align="center">Designed by LiuNing. Powered by NingBo SanXing Company.')
+        self.foot_text.setText('<p align="center">Designed by LiuNing.')
         self.foot_hbox = QtGui.QHBoxLayout()
         self.foot_hbox.addStretch(1)
         self.foot_hbox.addWidget(self.foot_text)

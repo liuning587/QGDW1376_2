@@ -17,6 +17,24 @@ if config.IS_USE_PYSIDE:
 else:
     from PyQt5 import QtGui, QtCore, QtWidgets
 
+# chardet 对「十六进制 + 少量中文」的 UTF-8 日志 confidence 常低于 0.9；0.95 几乎永远走 gb2312 误判。
+_CHARDET_MIN_CONFIDENCE = 0.58
+
+
+def _guess_log_encoding(sample, det):
+    """在 chardet 不够自信时，若样本可严格按 UTF-8 解码则用 UTF-8，否则 gb2312。"""
+    enc = (det.get('encoding') or '').strip()
+    conf = float(det.get('confidence') or 0.0)
+    if enc and conf >= _CHARDET_MIN_CONFIDENCE:
+        return enc
+    try:
+        sample.decode('utf-8')
+    except UnicodeDecodeError:
+        pass
+    else:
+        return 'utf-8'
+    return 'gb2312'
+
 
 class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
     """translate window"""
@@ -25,10 +43,13 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
 
     def __init__(self):
         super(TransWindow, self).__init__()
-        qss_file = open(os.path.join(config.SOFTWARE_PATH, 'styles/white_blue.qss')).read()
-        self.setStyleSheet(qss_file)
-        if config.IS_USE_PYSIDE:
-            self.setup_ui()
+        qss_path = os.path.join(config.SOFTWARE_PATH, 'styles', 'white_blue.qss')
+        try:
+            with open(qss_path, encoding='utf-8', errors='replace') as qss_fp:
+                self.setStyleSheet(qss_fp.read())
+        except OSError:
+            _log.warning('stylesheet missing or unreadable: %s', qss_path)
+        self.setup_ui()
         self.proc_bar.setVisible(False)
         self.show_level_cb.setChecked(True)
         self.auto_wrap_cb.setChecked(False)
@@ -136,11 +157,15 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
         self.proc_bar.setValue(percent)
 
 
-    def openfile(self, filepath=''):
-        """open file"""
+    def openfile(self, filepath='', *_args):
+        """open file (QAction.triggered passes bool checked — do not treat as path)."""
         action = self.sender()
-        if isinstance(action, QtWidgets.QAction) and os.path.isfile(action.text()):
-            filepath = action.text()
+        if isinstance(action, QtWidgets.QAction):
+            txt = action.text()
+            if isinstance(txt, str) and os.path.isfile(txt):
+                filepath = txt
+        if not isinstance(filepath, str):
+            filepath = ''
         if not os.path.isfile(filepath):
             filepath,_ = QtWidgets.QFileDialog.getOpenFileName(self, caption='请选择10376.2日志文件', filter='*')
         if filepath:
@@ -165,27 +190,23 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
 
 
     def read_file(self, filepath):
-        """read file thread"""
-        # get file encoding
-        with open(filepath, "rb") as file:
-            encoding = chardet.detect(file.read(65535))
-            _log.debug('chardet: %s', encoding)
-            if encoding['confidence'] > 0.95:
-                file_encoding = encoding['encoding']
-            else:
-                file_encoding = 'gb2312'
-
-        with open(filepath, encoding=file_encoding, errors='ignore') as file:
-            count = 0
-            for _ in file:
-                count += 1
-        with open(filepath, encoding=file_encoding, errors='ignore') as file:
-            file_text = ''
-            for i, line in enumerate(file):
-                file_text += line
-                if i % 500 == 0:
-                    self.set_progress.emit(i*95 / count)
+        """read file thread (single binary read + decode, no O(n²) concat)."""
+        self.set_progress.emit(5)
+        with open(filepath, 'rb') as file:
+            raw = file.read()
+        self.set_progress.emit(25)
+        sample = raw[:65535] if len(raw) > 65535 else raw
+        det = chardet.detect(sample)
+        _log.debug('chardet: %s', det)
+        file_encoding = _guess_log_encoding(sample, det)
+        self.set_progress.emit(45)
+        try:
+            file_text = raw.decode(file_encoding, errors='ignore')
+        except (LookupError, ValueError):
+            file_text = raw.decode('gb2312', errors='ignore')
+        self.set_progress.emit(95)
         self.load_file.emit(file_text)
+        self.set_progress.emit(100)
         _log.debug('read_file thread done')
 
 
@@ -306,20 +327,28 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
         """clear_box"""
         self.input_box.setPlainText('')
         self.output_box.setText('')
+        self.find_l.setText('')
+        self.last_find_text = ''
+        self.text_find_list = []
         self.setWindowTitle('10376.2日志解析工具 {ver}'.format(ver=config.MASTER_WINDOW_TITLE_ADD))
         self.input_box.setFocus()
 
 
     def search_text(self, text):
-        """search_text"""
+        """search_text (literal substring; safe for regex metacharacters)."""
+        if not text:
+            self.text_find_list = []
+            self.find_l.setText('')
+            self.last_find_text = ''
+            return
         input_text = self.input_box.toPlainText()
-        res = re.compile(r'%s'%text)
-        all_match = res.finditer(input_text)
-        self.text_find_list = [mes.span() for mes in all_match]
+        res = re.compile(re.escape(text))
+        self.text_find_list = [mes.span() for mes in res.finditer(input_text)]
         if self.text_find_list:
-            self.find_l.setText('0/%d'%len(self.text_find_list))
+            self.find_l.setText('0/%d' % len(self.text_find_list))
         else:
             self.find_l.setText('未找到！')
+        self.last_find_text = text
 
 
     def find_next(self, is_setfocus=True):
@@ -353,7 +382,7 @@ class TransWindow(QtWidgets.QMainWindow, TransWindowUi):
         find_text = self.find_box.text()
         if not find_text:
             return
-        if self.find_l.text() or find_text != self.last_find_text:
+        if self.find_l.text() == '' or find_text != self.last_find_text:
             self.search_text(find_text)
         if self.find_l.text() == '未找到！':
             return
